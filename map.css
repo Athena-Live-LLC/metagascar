@@ -262,20 +262,154 @@ h1 {
 }
 
 .house-preview {
-  min-height: 168px;
+  min-height: 236px;
   margin: 16px 0;
-  border: 1px solid rgba(244, 255, 233, 0.18);
-  background:
-    linear-gradient(135deg, rgba(124, 255, 196, 0.18), rgba(198, 125, 255, 0.18)),
-    #f4ffe9;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: contain;
+  color: #21180d;
 }
 
 .detail-panel h2 {
   font-size: 1.36rem;
   line-height: 1.12;
+}
+
+.deed-card {
+  position: relative;
+  min-height: 236px;
+  overflow: hidden;
+  padding: 16px;
+  border: 1px solid rgba(74, 48, 20, 0.55);
+  background:
+    linear-gradient(135deg, rgba(255, 246, 206, 0.92), rgba(238, 218, 165, 0.94)),
+    repeating-linear-gradient(0deg, rgba(76, 49, 22, 0.05) 0 1px, transparent 1px 5px);
+  box-shadow:
+    inset 0 0 0 4px rgba(78, 45, 18, 0.12),
+    inset 0 0 0 8px rgba(244, 255, 233, 0.32),
+    0 18px 38px rgba(0, 0, 0, 0.24);
+}
+
+.deed-card::before,
+.deed-card::after {
+  content: "";
+  position: absolute;
+  width: 76px;
+  height: 76px;
+  border: 1px solid rgba(90, 54, 18, 0.28);
+  transform: rotate(45deg);
+}
+
+.deed-card::before {
+  top: -44px;
+  left: -44px;
+}
+
+.deed-card::after {
+  right: -44px;
+  bottom: -44px;
+}
+
+.deed-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px double rgba(78, 45, 18, 0.42);
+}
+
+.deed-mark {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  color: #241303;
+  border: 1px solid rgba(78, 45, 18, 0.62);
+  background:
+    radial-gradient(circle, #d7ff3f 0 28%, #7cffc4 29% 55%, #ff6f61 56%);
+  font-family: "Unbounded", system-ui, sans-serif;
+  font-size: 1.1rem;
+  font-weight: 900;
+}
+
+.deed-kicker {
+  margin: 0 0 3px;
+  color: rgba(33, 24, 13, 0.68);
+  font-size: 0.63rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.deed-title {
+  margin: 0;
+  color: #21180d;
+  font-family: "Unbounded", system-ui, sans-serif;
+  font-size: 0.98rem;
+  line-height: 1.1;
+}
+
+.deed-token {
+  margin: 0;
+  color: rgba(33, 24, 13, 0.78);
+  font-weight: 900;
+  text-align: right;
+}
+
+.deed-body {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.deed-row {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+}
+
+.deed-row span:first-child {
+  color: rgba(33, 24, 13, 0.62);
+  font-size: 0.62rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.deed-row span:last-child {
+  color: #21180d;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.deed-footer {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: end;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(78, 45, 18, 0.28);
+}
+
+.deed-signature {
+  color: rgba(33, 24, 13, 0.66);
+  font-family: Georgia, serif;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.deed-seal {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  color: #21180d;
+  border: 2px solid rgba(78, 45, 18, 0.48);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 111, 97, 0.95), rgba(215, 255, 63, 0.86));
+  font-size: 0.58rem;
+  font-weight: 900;
+  text-align: center;
+  text-transform: uppercase;
 }
 
 dl {

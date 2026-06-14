@@ -21,6 +21,11 @@ const PUBLIC_MINT_END = 8000;
 const BLOCK_LENGTH = 88;
 const ROAD_WIDTH = 6.4;
 const ROAD_HALF = ROAD_WIDTH / 2;
+const STREET_START_Z = 18;
+const STREET_END_Z = -50;
+const SPLIT_Z = -46;
+const CROSS_STREET_WIDTH = 7.0;
+const CROSS_STREET_LENGTH = 28;
 const SIDEWALK_WIDTH = 1.35;
 const PARCEL_CENTER_X = 8.15;
 const LOT_SPACING = 6.35;
@@ -155,6 +160,15 @@ function showToast(message) {
 function shortenAddress(address) {
   if (!address || address === ZERO_ADDRESS) return "Unminted";
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 function decodeTokenMetadata(tokenURI) {
@@ -342,6 +356,49 @@ function addStreetSign(side, z, labelWidth = 0.64) {
   mapRoot.add(sign);
 }
 
+function addStreetSplit() {
+  const crossRoad = new THREE.Mesh(new THREE.PlaneGeometry(CROSS_STREET_LENGTH, CROSS_STREET_WIDTH), materials.road);
+  crossRoad.rotation.x = -Math.PI / 2;
+  crossRoad.position.set(0, 0.019, SPLIT_Z);
+  mapRoot.add(crossRoad);
+
+  const stopBar = new THREE.Mesh(new THREE.PlaneGeometry(ROAD_WIDTH - 0.8, 0.18), materials.roadLine);
+  stopBar.rotation.x = -Math.PI / 2;
+  stopBar.position.set(0, 0.052, SPLIT_Z + CROSS_STREET_WIDTH * 0.52);
+  mapRoot.add(stopBar);
+
+  [-1, 1].forEach((side) => {
+    const branchStripe = new THREE.Mesh(new THREE.PlaneGeometry(6.2, 0.14), materials.stripe);
+    branchStripe.rotation.x = -Math.PI / 2;
+    branchStripe.position.set(side * 6.0, 0.052, SPLIT_Z);
+    mapRoot.add(branchStripe);
+
+    const outerCurb = new THREE.Mesh(new THREE.BoxGeometry(CROSS_STREET_LENGTH / 2 - 1.5, 0.18, 0.16), materials.curb);
+    outerCurb.position.set(side * 7.2, 0.12, SPLIT_Z - CROSS_STREET_WIDTH / 2);
+    mapRoot.add(outerCurb);
+
+    const innerCurb = new THREE.Mesh(new THREE.BoxGeometry(CROSS_STREET_LENGTH / 2 - 1.5, 0.18, 0.16), materials.curb);
+    innerCurb.position.set(side * 7.2, 0.12, SPLIT_Z + CROSS_STREET_WIDTH / 2);
+    mapRoot.add(innerCurb);
+
+    const sidewalk = new THREE.Mesh(new THREE.PlaneGeometry(CROSS_STREET_LENGTH / 2 - 1.2, SIDEWALK_WIDTH), materials.sidewalk);
+    sidewalk.rotation.x = -Math.PI / 2;
+    sidewalk.position.set(side * 7.15, 0.048, SPLIT_Z - CROSS_STREET_WIDTH / 2 - SIDEWALK_WIDTH / 2 - 0.24);
+    mapRoot.add(sidewalk);
+
+    const arrow = new THREE.Group();
+    const shaft = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.03, 0.18), materials.stripe);
+    const head = new THREE.Mesh(new THREE.ConeGeometry(0.34, 0.62, 3), materials.stripe);
+    head.rotation.z = side < 0 ? Math.PI / 2 : -Math.PI / 2;
+    head.position.x = side * 0.82;
+    arrow.add(shaft, head);
+    arrow.position.set(side * 2.2, 0.06, SPLIT_Z + 0.8);
+    mapRoot.add(arrow);
+
+    addStreetSign(side, SPLIT_Z + 3.1, 0.82);
+  });
+}
+
 function addGround() {
   const grass = new THREE.Mesh(new THREE.PlaneGeometry(38, BLOCK_LENGTH + 8), materials.grass);
   grass.rotation.x = -Math.PI / 2;
@@ -353,6 +410,7 @@ function addGround() {
   road.position.y = 0.015;
   road.position.z = -18;
   mapRoot.add(road);
+  addStreetSplit();
 
   [-1, 1].forEach((side) => {
     const curbX = side * (ROAD_HALF + 0.12);
@@ -388,17 +446,17 @@ function addGround() {
     }
   });
 
-  for (let index = 0; index < 19; index += 1) {
+  for (let index = 0; index < 15; index += 1) {
     const stripe = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 1.8), materials.stripe);
     stripe.rotation.x = -Math.PI / 2;
-    stripe.position.set(0, 0.032, 18 - index * 4.6);
+    stripe.position.set(0, 0.032, 15 - index * 4.2);
     mapRoot.add(stripe);
   }
 
   [-1, 1].forEach((side) => {
-    const edgeLine = new THREE.Mesh(new THREE.PlaneGeometry(0.08, BLOCK_LENGTH - 2), materials.roadLine);
+    const edgeLine = new THREE.Mesh(new THREE.PlaneGeometry(0.08, 63), materials.roadLine);
     edgeLine.rotation.x = -Math.PI / 2;
-    edgeLine.position.set(side * (ROAD_HALF - 0.42), 0.038, -18);
+    edgeLine.position.set(side * (ROAD_HALF - 0.42), 0.038, -13.5);
     mapRoot.add(edgeLine);
 
     for (let row = 0; row < 8; row += 1) {
@@ -617,11 +675,33 @@ async function renderBlock() {
 }
 
 function setPanelImage(house) {
-  if (house.image?.startsWith("data:image/")) {
-    details.preview.style.backgroundImage = `url("${house.image}")`;
-  } else {
-    details.preview.style.backgroundImage = "";
-  }
+  details.preview.style.backgroundImage = "";
+  const grantee = house.liveOwner === ZERO_ADDRESS
+    ? "Available for mint"
+    : shortenAddress(house.liveOwner || house.owner) || "Pending mint";
+  details.preview.innerHTML = `
+    <div class="deed-card">
+      <div class="deed-top">
+        <div class="deed-mark">M</div>
+        <div>
+          <p class="deed-kicker">Metagascar County Registry</p>
+          <p class="deed-title">Certificate of MetaHome Title</p>
+        </div>
+        <p class="deed-token">#${escapeHtml(house.tokenId)}</p>
+      </div>
+      <div class="deed-body">
+        <div class="deed-row"><span>Grantee</span><span>${escapeHtml(grantee)}</span></div>
+        <div class="deed-row"><span>Parcel</span><span>${escapeHtml(house.land)}</span></div>
+        <div class="deed-row"><span>Estate</span><span>${escapeHtml(house.homeStyle)}</span></div>
+        <div class="deed-row"><span>Structure</span><span>${escapeHtml(house.homeSize)}</span></div>
+        <div class="deed-row"><span>Access</span><span>${escapeHtml(`${house.driveway} / ${house.drivewayStyle}`)}</span></div>
+      </div>
+      <div class="deed-footer">
+        <span class="deed-signature">Recorded by Alpha Explorer Meta</span>
+        <span class="deed-seal">Meta<br>Seal</span>
+      </div>
+    </div>
+  `;
 }
 
 function updateMintButton(label, disabled, note) {
@@ -631,14 +711,14 @@ function updateMintButton(label, disabled, note) {
 }
 
 function updateStreetLabel() {
-  const progress = Math.round(((8 - targetStreetFocusZ) / 44) * 100);
-  streetLabel.textContent = `Street ${Math.min(100, Math.max(0, progress))}%`;
+  const progress = Math.round(((8 - targetStreetFocusZ) / 52) * 100);
+  streetLabel.textContent = progress >= 96 ? "Left / Right split" : `Street ${Math.min(100, Math.max(0, progress))}%`;
   walkBack.disabled = targetStreetFocusZ >= 8;
-  walkForward.disabled = targetStreetFocusZ <= -36;
+  walkForward.disabled = targetStreetFocusZ <= -44;
 }
 
 function moveStreet(delta) {
-  targetStreetFocusZ = Math.min(8, Math.max(-36, targetStreetFocusZ + delta));
+  targetStreetFocusZ = Math.min(8, Math.max(-44, targetStreetFocusZ + delta));
   updateStreetLabel();
 }
 
@@ -653,11 +733,13 @@ async function refreshMintStatus(house) {
     house.liveOwner = owner;
     details.owner.textContent = shortenAddress(owner);
     details.status.textContent = "Already minted";
+    setPanelImage(house);
     updateMintButton("Already minted", true, `Owned by ${shortenAddress(owner)}. This token cannot be minted again.`);
   } catch (_error) {
     house.liveOwner = ZERO_ADDRESS;
     details.owner.textContent = "Unminted";
     details.status.textContent = "Mint available";
+    setPanelImage(house);
     const price = mintPrice === null ? "contract price" : `${ethers.formatEther(mintPrice)} ETH`;
     updateMintButton(`Mint for ${price}`, !writeContract, writeContract ? "This lot appears unminted on-chain." : "Connect wallet to mint this available lot.");
   }
