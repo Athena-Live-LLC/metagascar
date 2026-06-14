@@ -6,6 +6,10 @@ Metagascar is an Ethereum NFT collection and metaverse concept built around scar
 
 The collection is listed on OpenSea as **Metagascar Westside**.
 
+## Lore
+
+The Metaverse is open, and the rocketships of explorers have been dispatched! The first MetaIsland to be discovered by the Alpha Explorer "Meta" has been dubbed Metagascar. Here you will find a thriving community of unique MetaHumans who reside in their equally unique MetaHomes. On the island of Metagascar you will find various facets of social activity including friendship, dating, and of course what island would be complete without messages in a bottle!
+
 ## Links
 
 - Website: https://metagascar.com
