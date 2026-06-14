@@ -1,0 +1,13 @@
+{
+  "name": "metagascar",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "download:contract": "node scripts/download-metagascar-contract-data.mjs",
+    "download:contract:sample": "node scripts/download-metagascar-contract-data.mjs --limit 5"
+  },
+  "dependencies": {
+    "ethers": "^6.15.0"
+  }
+}
