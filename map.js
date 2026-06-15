@@ -20,8 +20,14 @@ const ETH_MAINNET = "0x1";
 const PAGE_SIZE = 20;
 const LOTS_PER_SIDE = PAGE_SIZE / 2;
 const MAX_MODEL_BYTES = 1_350_000;
-const PUBLIC_MINT_START = 1001;
-const PUBLIC_MINT_END = 8000;
+const ASSET_IMPORT_CONCURRENCY = 3;
+const NFT_START = 1;
+const NFT_END = 8000;
+const STREET_CSV_URL = "data/metagascar.streets.csv";
+const STREET_VIEW_RADIUS = 2;
+const HOUSE_STREAM_RADIUS = 1;
+const PARALLEL_STREET_COUNT = STREET_VIEW_RADIUS * 2 + 1;
+const STREET_SPACING = 22;
 const ROAD_WIDTH = 6.8;
 const ROAD_HALF = ROAD_WIDTH / 2;
 const STREET_START_Z = 28;
@@ -33,6 +39,8 @@ const FIRST_LOT_Z = 15;
 const LAST_LOT_Z = INTERSECTION_CLEARANCE_Z + 3.2;
 const SIDEWALK_WIDTH = 1.35;
 const PARCEL_CENTER_X = 8.45;
+const WORLD_EDGE_PADDING = 16.5;
+const GRID_WIDTH = STREET_SPACING * (PARALLEL_STREET_COUNT - 1) + ROAD_WIDTH;
 const LOT_SPACING = (FIRST_LOT_Z - LAST_LOT_Z) / (LOTS_PER_SIDE - 1);
 const STREET_DECOR_ROWS = 10;
 const STREET_DECOR_SPACING = (FIRST_LOT_Z - LAST_LOT_Z) / (STREET_DECOR_ROWS - 1);
@@ -78,11 +86,17 @@ const details = {
 };
 
 let houseData = [];
+let streetRows = [];
+let streetNames = [];
 let assetModels = [];
 let modelCalibration = null;
 let visibleOffset = 0;
+let currentStreetIndex = 0;
+let renderedStreetCenter = null;
 let selectedHouse = null;
 let selectedNode = null;
+let cityWindowVersion = 0;
+let mintStatusRequestId = 0;
 let signer = null;
 let readContract = null;
 let writeContract = null;
@@ -139,7 +153,10 @@ shadowGenerator.blurKernel = 24;
 shadowGenerator.getShadowMap().refreshRate = BABYLON.RenderTargetTexture.REFRESHRATE_RENDER_ONCE;
 
 const dynamicNodes = [];
+const pageNodes = [];
 const pickableMeshes = [];
+const assetImportQueue = [];
+let activeAssetImports = 0;
 const materialCache = new Map();
 
 function mat(name, hex, options = {}) {
@@ -211,6 +228,100 @@ function clamp(value, min, max) {
 function scaleFromRange(value, minValue, maxValue, minScale, maxScale) {
   const normalized = (value - minValue) / (maxValue - minValue);
   return minScale + clamp(normalized, 0, 1) * (maxScale - minScale);
+}
+
+function parseCsvLine(line) {
+  const values = [];
+  let current = "";
+  let quoted = false;
+
+  for (let index = 0; index < line.length; index += 1) {
+    const character = line[index];
+    if (character === '"') {
+      if (quoted && line[index + 1] === '"') {
+        current += '"';
+        index += 1;
+      } else {
+        quoted = !quoted;
+      }
+    } else if (character === "," && !quoted) {
+      values.push(current.trim());
+      current = "";
+    } else {
+      current += character;
+    }
+  }
+
+  values.push(current.trim());
+  return values;
+}
+
+function streetNameFromAddress(address) {
+  return String(address || "").replace(/^\d+\s+/, "").trim();
+}
+
+function activeStreetIndex() {
+  return currentStreetIndex;
+}
+
+function activeStreetName() {
+  return streetNames[activeStreetIndex()] || "Metagascar Street";
+}
+
+function maxStreetIndex() {
+  return Math.max(0, streetNames.length - 1);
+}
+
+function worldXForStreet(streetIndex) {
+  return streetIndex * STREET_SPACING;
+}
+
+function streetIndexForWorldX(x) {
+  return clamp(Math.round(x / STREET_SPACING), 0, maxStreetIndex());
+}
+
+function streetRowsForIndex(streetIndex) {
+  const start = streetIndex * PAGE_SIZE;
+  return houseData.slice(start, start + PAGE_SIZE);
+}
+
+async function loadStreetRows() {
+  const response = await fetch(STREET_CSV_URL);
+  if (!response.ok) throw new Error(`Could not load ${STREET_CSV_URL}: HTTP ${response.status}`);
+  const rows = (await response.text())
+    .trim()
+    .split(/\r?\n/)
+    .map((line) => parseCsvLine(line))
+    .filter((columns) => columns.length >= 7)
+    .map((columns) => {
+      const sourceId = Number(columns[1]);
+      const tokenNumber = sourceId;
+      const streetName = streetNameFromAddress(columns[0]);
+      return {
+        sourceId,
+        tokenId: String(tokenNumber),
+        address: columns[0],
+        streetName,
+        name: columns[0],
+        loaded: true,
+        homeStyle: columns[2],
+        homeSize: columns[3],
+        drivewayStyle: columns[4],
+        driveway: columns[5],
+        land: columns[6],
+        mintedAt: columns[7],
+        hubUrl: columns[8],
+        mapUrl: columns[9]
+      };
+    })
+    .filter((row) => row.sourceId >= NFT_START && Number(row.tokenId) <= NFT_END);
+
+  const names = [];
+  for (let index = 0; index < rows.length; index += PAGE_SIZE) {
+    names.push(rows[index]?.streetName || `Street ${Math.floor(index / PAGE_SIZE) + 1}`);
+  }
+  streetNames = names;
+  return rows;
 }
 
 function storyCountForHouse(house) {
@@ -296,6 +407,50 @@ function createPlaneBox(name, width, depth, y, z, material, x = 0) {
   });
 }
 
+function trackPageNode(node) {
+  pageNodes.push(node);
+  return node;
+}
+
+function createStreetNameSign(streetName, streetIndex) {
+  const root = new BABYLON.TransformNode(`streetName-${streetIndex}-${streetName}`, scene);
+  const roadCenterX = worldXForStreet(streetIndex);
+  root.position = new BABYLON.Vector3(roadCenterX, 0, FIRST_LOT_Z + 3.2);
+  trackPageNode(root);
+
+  const post = createBox("streetNamePost", 0.08, 1.05, 0.08, new BABYLON.Vector3(-1.6, 0.55, 0), materials.curb);
+  post.parent = root;
+
+  const plane = BABYLON.MeshBuilder.CreatePlane("streetNamePanel", { width: 3.3, height: 0.58 }, scene);
+  plane.position = new BABYLON.Vector3(0, 1.2, 0);
+  const texture = new BABYLON.DynamicTexture(`streetNameTexture-${streetName}`, { width: 512, height: 128 }, scene, false);
+  const context = texture.getContext();
+  context.fillStyle = "#06110f";
+  context.fillRect(0, 0, 512, 128);
+  context.strokeStyle = "#7cffc4";
+  context.lineWidth = 5;
+  context.strokeRect(8, 8, 496, 112);
+  context.fillStyle = "#f4ffe9";
+  context.font = "bold 40px Arial";
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillText(streetName.toUpperCase(), 256, 64, 462);
+  texture.update();
+  const material = new BABYLON.StandardMaterial(`streetNameMaterial-${streetName}`, scene);
+  material.diffuseTexture = texture;
+  material.emissiveColor = BABYLON.Color3.FromHexString(streetIndex === currentStreetIndex ? "#153b2d" : "#071b17");
+  material.specularColor = BABYLON.Color3.Black();
+  plane.material = material;
+  plane.parent = root;
+}
+
+function addVisibleStreetNames(centerStreetIndex) {
+  for (let streetIndex = Math.max(0, centerStreetIndex - STREET_VIEW_RADIUS); streetIndex <= Math.min(maxStreetIndex(), centerStreetIndex + STREET_VIEW_RADIUS); streetIndex += 1) {
+    const name = streetNames[streetIndex];
+    if (name) createStreetNameSign(name, streetIndex);
+  }
+}
+
 function drivewayMaterial(driveway) {
   const text = String(driveway || "").toLowerCase();
   if (text.includes("brick")) return materials.brick;
@@ -307,26 +462,28 @@ function drivewayMaterial(driveway) {
   return materials.gravel;
 }
 
-function addStreetFurniture(side, z) {
-  const x = side * (ROAD_HALF + SIDEWALK_WIDTH + 0.15);
-  createBox("lampPost", 0.08, 2.2, 0.08, new BABYLON.Vector3(x, 1.1, z), materials.dark);
+function addStreetFurniture(side, z, roadCenterX = 0) {
+  const x = roadCenterX + side * (ROAD_HALF + SIDEWALK_WIDTH + 0.15);
+  trackPageNode(createBox("lampPost", 0.08, 2.2, 0.08, new BABYLON.Vector3(x, 1.1, z), materials.dark));
   const lamp = BABYLON.MeshBuilder.CreateSphere("lampGlow", { diameter: 0.34, segments: 12 }, scene);
   lamp.position = new BABYLON.Vector3(x, 2.32, z);
   lamp.material = materials.volt;
-  dynamicNodes.push(lamp);
+  trackPageNode(lamp);
   const point = new BABYLON.PointLight("streetLamp", lamp.position, scene);
   point.diffuse = BABYLON.Color3.FromHexString("#d7ff3f");
   point.intensity = 0.22;
   point.range = 7;
+  trackPageNode(point);
 
-  const signX = side * (ROAD_HALF + SIDEWALK_WIDTH + 0.72);
-  createBox("streetSignPost", 0.06, 1.05, 0.06, new BABYLON.Vector3(signX, 0.55, z + 1.8), materials.curb);
-  createBox("streetSignPanel", 0.7, 0.28, 0.06, new BABYLON.Vector3(signX, 1.12, z + 1.8), materials.aqua);
+  const signX = roadCenterX + side * (ROAD_HALF + SIDEWALK_WIDTH + 0.72);
+  trackPageNode(createBox("streetSignPost", 0.06, 1.05, 0.06, new BABYLON.Vector3(signX, 0.55, z + 1.8), materials.curb));
+  trackPageNode(createBox("streetSignPanel", 0.7, 0.28, 0.06, new BABYLON.Vector3(signX, 1.12, z + 1.8), materials.aqua));
 }
 
-function addCar(side, z, material) {
+function addCar(side, z, material, roadCenterX = 0) {
   const root = new BABYLON.TransformNode("parkedCar", scene);
-  root.position = new BABYLON.Vector3(side * (ROAD_HALF - 0.75), 0.04, z);
+  trackPageNode(root);
+  root.position = new BABYLON.Vector3(roadCenterX + side * (ROAD_HALF - 0.75), 0.04, z);
   root.rotation.y = side < 0 ? Math.PI : 0;
   createBox("carBody", 0.95, 0.32, 1.65, new BABYLON.Vector3(0, 0.28, 0), material).parent = root;
   createBox("carCabin", 0.62, 0.26, 0.72, new BABYLON.Vector3(0, 0.58, -0.05), materials.glass).parent = root;
@@ -341,43 +498,56 @@ function addCar(side, z, material) {
   }
 }
 
-function addGround() {
-  createPlaneBox("grass", 48, 100, -0.03, -18, materials.grass);
-  createPlaneBox("road", ROAD_WIDTH, 88, 0.02, -18, materials.road);
-  createPlaneBox("splitRoad", CROSS_STREET_LENGTH, CROSS_STREET_WIDTH, 0.03, SPLIT_Z, materials.road);
-  createPlaneBox("stopBar", ROAD_WIDTH - 0.8, 0.16, 0.07, SPLIT_Z + CROSS_STREET_WIDTH * 0.52, materials.roadLine);
+function addGroundWindow(centerStreetIndex) {
+  const startStreet = Math.max(0, centerStreetIndex - STREET_VIEW_RADIUS);
+  const endStreet = Math.min(maxStreetIndex(), centerStreetIndex + STREET_VIEW_RADIUS);
+  const startX = worldXForStreet(startStreet);
+  const endX = worldXForStreet(endStreet);
+  const windowCenterX = (startX + endX) / 2;
+  const windowWidth = Math.max(GRID_WIDTH, endX - startX + ROAD_WIDTH);
 
-  for (const side of [-1, 1]) {
-    const sidewalkX = side * (ROAD_HALF + SIDEWALK_WIDTH / 2 + 0.28);
-    createPlaneBox("sidewalk", SIDEWALK_WIDTH, 88, 0.06, -18, materials.sidewalk, sidewalkX);
-    createBox("curb", 0.18, 0.18, 88, new BABYLON.Vector3(side * (ROAD_HALF + 0.12), 0.11, -18), materials.curb);
-    createBox("propertyEdge", 0.06, 0.08, 88, new BABYLON.Vector3(side * (ROAD_HALF + SIDEWALK_WIDTH + 0.48), 0.09, -18), materials.curb);
-    createBox("crossCurbNear", CROSS_STREET_LENGTH / 2 - 1.2, 0.16, 0.16, new BABYLON.Vector3(side * 7.8, 0.12, SPLIT_Z + CROSS_STREET_WIDTH / 2), materials.curb);
-    createBox("crossCurbFar", CROSS_STREET_LENGTH / 2 - 1.2, 0.16, 0.16, new BABYLON.Vector3(side * 7.8, 0.12, SPLIT_Z - CROSS_STREET_WIDTH / 2), materials.curb);
-    createPlaneBox("branchStripe", 6.5, 0.14, 0.08, SPLIT_Z, materials.stripe, side * 6.2);
+  trackPageNode(createPlaneBox("grassWindow", windowWidth + 36, 104, -0.03, -18, materials.grass, windowCenterX));
+  for (const z of [FIRST_LOT_Z + 6.5, -15.5, SPLIT_Z]) {
+    const width = windowWidth + ROAD_WIDTH;
+    const depth = z === -15.5 ? CROSS_STREET_WIDTH * 0.72 : CROSS_STREET_WIDTH;
+    trackPageNode(createPlaneBox("crossStreet", width, depth, 0.025, z, materials.road, windowCenterX));
   }
 
-  for (let index = 0; index < 15; index += 1) {
-    createPlaneBox("centerStripe", 0.2, 1.8, 0.08, FIRST_LOT_Z - index * 4.2, materials.stripe);
-  }
+  for (let streetIndex = startStreet; streetIndex <= endStreet; streetIndex += 1) {
+    const roadCenterX = worldXForStreet(streetIndex);
+    trackPageNode(createPlaneBox("road", ROAD_WIDTH, 88, 0.02, -18, materials.road, roadCenterX));
+    trackPageNode(createPlaneBox("stopBar", ROAD_WIDTH - 0.8, 0.16, 0.07, SPLIT_Z + CROSS_STREET_WIDTH * 0.52, materials.roadLine, roadCenterX));
 
-  for (const z of [17.4, INTERSECTION_CLEARANCE_Z]) {
-    for (let index = 0; index < 7; index += 1) {
-      createPlaneBox("crosswalk", 0.38, ROAD_WIDTH + 0.8, 0.09, z, materials.roadLine, -2.7 + index * 0.9);
+    for (const side of [-1, 1]) {
+      const sidewalkX = roadCenterX + side * (ROAD_HALF + SIDEWALK_WIDTH / 2 + 0.28);
+      trackPageNode(createPlaneBox("sidewalk", SIDEWALK_WIDTH, 88, 0.06, -18, materials.sidewalk, sidewalkX));
+      trackPageNode(createBox("curb", 0.18, 0.18, 88, new BABYLON.Vector3(roadCenterX + side * (ROAD_HALF + 0.12), 0.11, -18), materials.curb));
+      trackPageNode(createBox("propertyEdge", 0.06, 0.08, 88, new BABYLON.Vector3(roadCenterX + side * (ROAD_HALF + SIDEWALK_WIDTH + 0.48), 0.09, -18), materials.curb));
     }
-  }
 
-  const carMaterials = [materials.aqua, materials.coral, materials.orchid, materials.curb];
-  for (const side of [-1, 1]) {
-    [10.8, -2.5, -18.8, -29.4].forEach((z, index) => addCar(side, z, carMaterials[(index + (side > 0 ? 1 : 0)) % carMaterials.length]));
-    for (let row = 0; row < STREET_DECOR_ROWS; row += 1) {
-      const z = FIRST_LOT_Z - row * STREET_DECOR_SPACING;
-      addStreetFurniture(side, z - 2.35);
-      const treeX = side * (ROAD_HALF + SIDEWALK_WIDTH + 0.86);
-      createBox("treeTrunk", 0.14, 0.9, 0.14, new BABYLON.Vector3(treeX, 0.48, z + 2.3), materials.brick);
-      const top = BABYLON.MeshBuilder.CreateSphere("treeTop", { diameter: 0.7, segments: 12 }, scene);
-      top.position = new BABYLON.Vector3(treeX, 1.12, z + 2.3);
-      top.material = materials.volt;
+    for (let index = 0; index < 15; index += 1) {
+      trackPageNode(createPlaneBox("centerStripe", 0.2, 1.8, 0.08, FIRST_LOT_Z - index * 4.2, materials.stripe, roadCenterX));
+    }
+
+    for (const z of [17.4, INTERSECTION_CLEARANCE_Z]) {
+      for (let index = 0; index < 7; index += 1) {
+        trackPageNode(createPlaneBox("crosswalk", 0.38, ROAD_WIDTH + 0.8, 0.09, z, materials.roadLine, roadCenterX - 2.7 + index * 0.9));
+      }
+    }
+
+    const carMaterials = [materials.aqua, materials.coral, materials.orchid, materials.curb];
+    for (const side of [-1, 1]) {
+      [10.8, -18.8].forEach((z, index) => addCar(side, z, carMaterials[(index + streetIndex + (side > 0 ? 1 : 0)) % carMaterials.length], roadCenterX));
+      for (let row = 0; row < STREET_DECOR_ROWS; row += 2) {
+        const z = FIRST_LOT_Z - row * STREET_DECOR_SPACING;
+        addStreetFurniture(side, z - 2.35, roadCenterX);
+        const treeX = roadCenterX + side * (ROAD_HALF + SIDEWALK_WIDTH + 0.86);
+        trackPageNode(createBox("treeTrunk", 0.14, 0.9, 0.14, new BABYLON.Vector3(treeX, 0.48, z + 2.3), materials.brick));
+        const top = BABYLON.MeshBuilder.CreateSphere("treeTop", { diameter: 0.7, segments: 12 }, scene);
+        top.position = new BABYLON.Vector3(treeX, 1.12, z + 2.3);
+        top.material = materials.volt;
+        trackPageNode(top);
+      }
     }
   }
 }
@@ -484,7 +654,26 @@ function finalModelFits(bounds, targetDimensions, parcelDepth, parcelFrontage) {
   );
 }
 
-async function addAssetHouse(house, slotIndex, root, side, parcelDepth, parcelFrontage) {
+function runNextAssetImport() {
+  while (activeAssetImports < ASSET_IMPORT_CONCURRENCY && assetImportQueue.length > 0) {
+    const job = assetImportQueue.shift();
+    activeAssetImports += 1;
+    job()
+      .catch((error) => console.warn(error.message || error))
+      .finally(() => {
+        activeAssetImports -= 1;
+        runNextAssetImport();
+      });
+  }
+}
+
+function queueAssetHouse(house, slotIndex, root, side, parcelDepth, parcelFrontage, expectedVersion) {
+  assetImportQueue.push(() => addAssetHouse(house, slotIndex, root, side, parcelDepth, parcelFrontage, expectedVersion));
+  runNextAssetImport();
+}
+
+async function addAssetHouse(house, slotIndex, root, side, parcelDepth, parcelFrontage, expectedVersion) {
+  if (expectedVersion !== cityWindowVersion || root.isDisposed?.()) return;
   const model = selectAssetModel(house, slotIndex);
   if (!model) return;
 
@@ -498,6 +687,11 @@ async function addAssetHouse(house, slotIndex, root, side, parcelDepth, parcelFr
     const result = await BABYLON.SceneLoader.ImportMeshAsync("", rootUrl, filename, scene);
     const importedNodes = [...result.meshes, ...result.transformNodes];
     const meshes = result.meshes.filter((mesh) => mesh instanceof BABYLON.Mesh && mesh.getTotalVertices() > 0);
+
+    if (expectedVersion !== cityWindowVersion || root.isDisposed?.()) {
+      for (const node of importedNodes) node.dispose?.();
+      return;
+    }
 
     const modelRoot = new BABYLON.TransformNode(`polyHouse-${model.id}`, scene);
     modelRoot.parent = root;
@@ -542,7 +736,6 @@ async function addAssetHouse(house, slotIndex, root, side, parcelDepth, parcelFr
       mesh.checkCollisions = false;
       mesh.metadata = { house, houseGroup: root, model };
       pickableMeshes.push(mesh);
-      shadowGenerator.addShadowCaster(mesh);
     }
 
     if (root.metadata?.placeholder) {
@@ -600,22 +793,24 @@ function removePickables(meshes) {
   }
 }
 
-function createHouseLot(house, slotIndex) {
+function createHouseLot(house, slotIndex, streetIndex, options = {}) {
+  const { detailed = false, expectedVersion = cityWindowVersion } = options;
   const side = slotIndex < LOTS_PER_SIDE ? -1 : 1;
   const row = slotIndex % LOTS_PER_SIDE;
   const z = FIRST_LOT_Z - row * LOT_SPACING;
   const parcelCenterX = side * PARCEL_CENTER_X;
   const root = new BABYLON.TransformNode(`lot-${house.tokenId}`, scene);
-  root.position = new BABYLON.Vector3(parcelCenterX, 0, z);
+  root.position = new BABYLON.Vector3(worldXForStreet(streetIndex) + parcelCenterX, 0, z);
   root.metadata = { house, baseY: 0 };
-  dynamicNodes.push(root);
+  pageNodes.push(root);
 
   const landSqft = traitNumber(house.land, 18000);
   const parcelDepth = scaleFromRange(landSqft, 15000, 91000, 4.5, 5.9);
   const parcelFrontage = scaleFromRange(landSqft, 15000, 91000, 4.45, 5.35);
   const roadEdgeLocalX = side * ROAD_HALF - parcelCenterX;
   const houseLocalX = side * 0.85;
-  const drivewayRun = Math.abs(roadEdgeLocalX - houseLocalX);
+  const lotFrontLocalX = -side * (parcelDepth / 2 - 0.18);
+  const drivewayRun = Math.abs(lotFrontLocalX - houseLocalX);
   const drivewayWidth = house.drivewayStyle?.includes("Valet") ? 1.55 : house.drivewayStyle?.includes("Oyster") ? 1.28 : 1.05;
   const drivewayZ = side * 0.45;
 
@@ -627,54 +822,75 @@ function createHouseLot(house, slotIndex) {
   const lawn = createBox("lawn", parcelDepth - 0.36, 0.04, parcelFrontage - 0.36, new BABYLON.Vector3(0, 0.15, 0), materials.grass);
   lawn.parent = root;
 
-  const driveway = createBox("driveway", drivewayRun, 0.06, drivewayWidth, new BABYLON.Vector3((roadEdgeLocalX + houseLocalX) / 2, 0.2, drivewayZ), drivewayMaterial(house.driveway), {
+  const driveway = createBox("driveway", drivewayRun, 0.06, drivewayWidth, new BABYLON.Vector3((lotFrontLocalX + houseLocalX) / 2, 0.2, drivewayZ), drivewayMaterial(house.driveway), {
     receiveShadows: true
   });
   driveway.parent = root;
 
-  const curbCut = createBox("curbCut", 0.72, 0.07, drivewayWidth + 0.25, new BABYLON.Vector3(roadEdgeLocalX - side * 0.18, 0.21, drivewayZ), materials.concrete);
+  const curbCut = createBox("curbCut", 0.72, 0.07, drivewayWidth + 0.25, new BABYLON.Vector3(lotFrontLocalX - side * 0.18, 0.21, drivewayZ), materials.concrete);
   curbCut.parent = root;
 
-  const walk = createBox("walkway", Math.max(0.8, drivewayRun * 0.58), 0.04, 0.34, new BABYLON.Vector3((roadEdgeLocalX + houseLocalX) / 2, 0.22, -drivewayZ), materials.sidewalk);
+  const walkRun = Math.max(0.65, drivewayRun * 0.5);
+  const walk = createBox("walkway", walkRun, 0.04, 0.34, new BABYLON.Vector3((lotFrontLocalX + houseLocalX) / 2, 0.22, -drivewayZ), materials.sidewalk);
   walk.parent = root;
 
-  const mailbox = createBox("mailbox", 0.3, 0.18, 0.18, new BABYLON.Vector3(roadEdgeLocalX - side * 0.58, 0.62, drivewayZ - 0.72), materials.aqua);
+  const mailboxX = lotFrontLocalX - side * 0.36;
+  const mailbox = createBox("mailbox", 0.3, 0.18, 0.18, new BABYLON.Vector3(mailboxX, 0.62, drivewayZ - 0.72), materials.aqua);
   mailbox.parent = root;
-  const post = createBox("mailboxPost", 0.05, 0.5, 0.05, new BABYLON.Vector3(roadEdgeLocalX - side * 0.58, 0.34, drivewayZ - 0.72), materials.curb);
+  const post = createBox("mailboxPost", 0.05, 0.5, 0.05, new BABYLON.Vector3(mailboxX, 0.34, drivewayZ - 0.72), materials.curb);
   post.parent = root;
 
   root.metadata.placeholder = addFallbackHouse(house, slotIndex, root, side);
-  addAssetHouse(house, slotIndex, root, side, parcelDepth, parcelFrontage);
+  if (detailed) queueAssetHouse(house, slotIndex, root, side, parcelDepth, parcelFrontage, expectedVersion);
   return root;
 }
 
-function clearHouses() {
-  for (const node of dynamicNodes.splice(0)) {
-    if (node.name.startsWith("lot-")) node.dispose();
-  }
+function clearCityWindow() {
+  for (const node of pageNodes.splice(0)) node.dispose();
   pickableMeshes.length = 0;
   selectedNode = null;
 }
 
-async function renderBlock() {
+async function renderCityWindow(centerStreetIndex, options = {}) {
+  const { resetView = false, selectFirst = true } = options;
+  cityWindowVersion += 1;
+  const version = cityWindowVersion;
+  assetImportQueue.length = 0;
+  currentStreetIndex = clamp(centerStreetIndex, 0, maxStreetIndex());
+  visibleOffset = currentStreetIndex * PAGE_SIZE;
+  renderedStreetCenter = currentStreetIndex;
   blockLabel.textContent = "Loading...";
   prevBlock.disabled = true;
   nextBlock.disabled = true;
-  resetPlayerView(false);
-  clearHouses();
+  if (resetView) resetPlayerView(false);
+  clearCityWindow();
 
-  const visible = await Promise.all(
-    houseData.slice(visibleOffset, visibleOffset + PAGE_SIZE).map(loadHouseDetails)
-  );
-  const roots = visible.map(createHouseLot);
+  addGroundWindow(currentStreetIndex);
+  addVisibleStreetNames(currentStreetIndex);
 
-  const start = PUBLIC_MINT_START + visibleOffset;
-  const end = Math.min(PUBLIC_MINT_START + visibleOffset + PAGE_SIZE - 1, PUBLIC_MINT_END);
-  blockLabel.textContent = `${start}-${end} of ${houseData.length}`;
+  const roots = [];
+  const firstStreet = Math.max(0, currentStreetIndex - HOUSE_STREAM_RADIUS);
+  const lastStreet = Math.min(maxStreetIndex(), currentStreetIndex + HOUSE_STREAM_RADIUS);
+  for (let streetIndex = firstStreet; streetIndex <= lastStreet; streetIndex += 1) {
+    const streetRows = await Promise.all(streetRowsForIndex(streetIndex).map(loadHouseDetails));
+    streetRows.forEach((house, slotIndex) => {
+      const root = createHouseLot(house, slotIndex, streetIndex, {
+        detailed: streetIndex === currentStreetIndex,
+        expectedVersion: version
+      });
+      if (streetIndex === currentStreetIndex) roots[slotIndex] = root;
+    });
+  }
+
+  const start = visibleOffset + NFT_START;
+  const end = Math.min(visibleOffset + PAGE_SIZE, NFT_END);
+  blockLabel.textContent = `${activeStreetName()} · ${start}-${end} of ${houseData.length}`;
   prevBlock.disabled = visibleOffset === 0;
   nextBlock.disabled = visibleOffset + PAGE_SIZE >= houseData.length;
+  updateStreetLabel();
 
-  if (visible.length > 0) selectHouse(visible[0], roots[0], false);
+  const visible = streetRowsForIndex(currentStreetIndex);
+  if ((selectFirst || !selectedNode) && visible.length > 0) selectHouse(visible[0], roots[0], false);
 }
 
 function setPanelImage(house) {
@@ -716,13 +932,13 @@ function updateMintButton(label, disabled, note) {
 function updateStreetLabel() {
   const distanceIntoStreet = Math.round(STREET_START_Z - camera.position.z);
   const atSplit = camera.position.z <= INTERSECTION_CLEARANCE_Z;
-  streetLabel.textContent = atSplit ? "Left / right split" : `${Math.max(0, distanceIntoStreet)}m down street`;
+  streetLabel.textContent = atSplit ? `${activeStreetName()} cross street` : `${Math.max(0, distanceIntoStreet)}m on ${activeStreetName()}`;
   walkForward.textContent = document.pointerLockElement === canvas ? "World Active" : "Enter World";
 }
 
 function resetPlayerView(announce = true) {
-  camera.position = new BABYLON.Vector3(0, 2.1, 27);
-  camera.setTarget(new BABYLON.Vector3(0, 1.3, -6));
+  camera.position = new BABYLON.Vector3(worldXForStreet(currentStreetIndex), 2.1, 27);
+  camera.setTarget(new BABYLON.Vector3(worldXForStreet(currentStreetIndex), 1.3, -6));
   updateStreetLabel();
   if (announce) showToast("View reset to the Metagascar entrance.");
 }
@@ -734,20 +950,23 @@ function lockWorld() {
   showToast("Babylon world controls active. Use WASD and mouse look.");
 }
 
-async function refreshMintStatus(house) {
+async function refreshMintStatus(house, requestId = mintStatusRequestId) {
   if (!readContract) {
+    if (requestId !== mintStatusRequestId || house !== selectedHouse) return;
     updateMintButton("Connect wallet to check mint", false, "Connect a wallet to check live ownership and mint available lots.");
     return;
   }
 
   try {
     const owner = await readContract.ownerOf(house.tokenId);
+    if (requestId !== mintStatusRequestId || house !== selectedHouse) return;
     house.liveOwner = owner;
     details.owner.textContent = shortenAddress(owner);
     details.status.textContent = "Already minted";
     setPanelImage(house);
     updateMintButton("Already minted", true, `Owned by ${shortenAddress(owner)}. This token cannot be minted again.`);
   } catch (_error) {
+    if (requestId !== mintStatusRequestId || house !== selectedHouse) return;
     house.liveOwner = ZERO_ADDRESS;
     details.owner.textContent = "Unminted";
     details.status.textContent = "Mint available";
@@ -758,6 +977,8 @@ async function refreshMintStatus(house) {
 }
 
 function selectHouse(house, meshGroup, announce = true) {
+  mintStatusRequestId += 1;
+  const requestId = mintStatusRequestId;
   selectedHouse = house;
   if (selectedNode) {
     selectedNode.scaling = BABYLON.Vector3.One();
@@ -778,7 +999,7 @@ function selectHouse(house, meshGroup, announce = true) {
   setPanelImage(house);
   updateMintButton("Checking mint status...", true, "Reading live Ethereum ownership for this token.");
 
-  refreshMintStatus(house);
+  window.setTimeout(() => refreshMintStatus(house, requestId), 0);
   if (announce) showToast(`Selected ${house.name}`);
 }
 
@@ -808,7 +1029,7 @@ async function connectWallet() {
   walletAddress = await signer.getAddress();
   readContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, browserProvider);
   writeContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-  mintPrice = await readContract.mintPrice();
+  mintPrice = mintPrice ?? await readContract.mintPrice();
   connectButton.textContent = shortenAddress(walletAddress);
   showToast("Wallet connected.");
 
@@ -826,6 +1047,7 @@ async function mintSelectedHouse() {
   if (selectedHouse.liveOwner && selectedHouse.liveOwner !== ZERO_ADDRESS) return;
 
   try {
+    mintPrice = mintPrice ?? await writeContract.mintPrice();
     updateMintButton("Confirm in wallet...", true, "Your wallet will ask you to confirm the mint transaction.");
     const tx = await writeContract.claim(selectedHouse.tokenId, { value: mintPrice });
     updateMintButton("Minting...", true, `Transaction submitted: ${tx.hash}`);
@@ -862,13 +1084,11 @@ function setupEvents() {
   });
 
   prevBlock.addEventListener("click", async () => {
-    visibleOffset = Math.max(0, visibleOffset - PAGE_SIZE);
-    await renderBlock();
+    await jumpToStreet(currentStreetIndex - 1);
   });
 
   nextBlock.addEventListener("click", async () => {
-    visibleOffset = Math.min(Math.max(0, houseData.length - PAGE_SIZE), visibleOffset + PAGE_SIZE);
-    await renderBlock();
+    await jumpToStreet(currentStreetIndex + 1);
   });
 
   walkForward.addEventListener("click", lockWorld);
@@ -889,6 +1109,14 @@ function setupEvents() {
   });
 
   window.addEventListener("resize", () => engine.resize());
+}
+
+async function jumpToStreet(streetIndex) {
+  const nextStreetIndex = clamp(streetIndex, 0, maxStreetIndex());
+  currentStreetIndex = nextStreetIndex;
+  camera.position.x = worldXForStreet(nextStreetIndex);
+  camera.setTarget(new BABYLON.Vector3(worldXForStreet(nextStreetIndex), 1.3, camera.position.z - 24));
+  await renderCityWindow(nextStreetIndex, { selectFirst: true });
 }
 
 function updatePlayerMovement() {
@@ -912,35 +1140,50 @@ function updatePlayerMovement() {
 }
 
 function keepCameraInWorld() {
-  camera.position.x = clamp(camera.position.x, -16.5, 16.5);
+  camera.position.x = clamp(camera.position.x, -WORLD_EDGE_PADDING, worldXForStreet(maxStreetIndex()) + WORLD_EDGE_PADDING);
   camera.position.z = clamp(camera.position.z, SPLIT_Z - CROSS_STREET_WIDTH * 0.54, 28.8);
   camera.position.y = 2.1;
   updateStreetLabel();
 }
 
+let streamUpdatePromise = null;
+
+function updateCityStreamForCamera() {
+  const nextStreetIndex = streetIndexForWorldX(camera.position.x);
+  if (nextStreetIndex === renderedStreetCenter || streamUpdatePromise) return;
+  streamUpdatePromise = renderCityWindow(nextStreetIndex, { selectFirst: false })
+    .catch((error) => {
+      console.error(error);
+      showToast("Could not stream the next Metagascar street.");
+    })
+    .finally(() => {
+      streamUpdatePromise = null;
+    });
+}
+
 async function boot() {
   if (!BABYLON) throw new Error("Babylon.js did not load.");
-  addGround();
   setupEvents();
   assetModels = await loadAssetManifests();
   if (assetModels.length === 0) showToast("Poly Pizza assets are missing; using fallback homes.");
+  streetRows = await loadStreetRows();
 
   const defaultProvider = new ethers.JsonRpcProvider("https://ethereum-rpc.publicnode.com", 1);
   readContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, defaultProvider);
-  mintPrice = await readContract.mintPrice();
-  houseData = Array.from(
-    { length: PUBLIC_MINT_END - PUBLIC_MINT_START + 1 },
-    (_item, index) => ({
-      tokenId: String(PUBLIC_MINT_START + index),
-      name: `Metagascar #${PUBLIC_MINT_START + index}`,
-      loaded: false
+  readContract.mintPrice()
+    .then((price) => {
+      mintPrice = price;
+      if (selectedHouse?.liveOwner === ZERO_ADDRESS) refreshMintStatus(selectedHouse);
     })
-  );
+    .catch((error) => console.warn(`Could not read mint price yet: ${error.shortMessage || error.message}`));
+  houseData = streetRows.slice(0, NFT_END - NFT_START + 1);
 
-  await renderBlock();
+  currentStreetIndex = 0;
+  await renderCityWindow(currentStreetIndex, { resetView: true, selectFirst: true });
   engine.runRenderLoop(() => {
     updatePlayerMovement();
     keepCameraInWorld();
+    updateCityStreamForCamera();
     if (selectedNode) selectedNode.position.y = (selectedNode.metadata?.baseY || 0) + (Math.sin(performance.now() * 0.003) + 1) * 0.02;
     scene.render();
   });
