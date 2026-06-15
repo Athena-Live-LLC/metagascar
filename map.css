@@ -56,12 +56,14 @@ button {
   display: block;
   width: 100%;
   height: 100%;
+  touch-action: none;
 }
 
 .map-header,
 .map-copy,
 .map-controls,
 .street-controls,
+.world-hud,
 .detail-panel,
 .toast {
   position: absolute;
@@ -216,6 +218,63 @@ h1 {
   font-size: 0.82rem;
   font-weight: 800;
   text-align: center;
+}
+
+.world-hud {
+  left: 50%;
+  top: 50%;
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.crosshair {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  opacity: 0.82;
+}
+
+.crosshair::before,
+.crosshair::after {
+  content: "";
+  position: absolute;
+  background: rgba(244, 255, 233, 0.9);
+  box-shadow: 0 0 12px rgba(124, 255, 196, 0.75);
+}
+
+.crosshair::before {
+  left: 13px;
+  top: 0;
+  width: 2px;
+  height: 28px;
+}
+
+.crosshair::after {
+  left: 0;
+  top: 13px;
+  width: 28px;
+  height: 2px;
+}
+
+.control-help {
+  position: fixed;
+  left: 50%;
+  bottom: 92px;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  border: 1px solid rgba(244, 255, 233, 0.18);
+  background: rgba(6, 17, 15, 0.72);
+  padding: 8px 12px;
+  color: rgba(244, 255, 233, 0.86);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-align: center;
+  transform: translateX(-50%);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 .detail-panel {
@@ -496,6 +555,7 @@ dd {
   .map-copy,
   .map-controls,
   .street-controls,
+  .world-hud,
   .detail-panel {
     position: relative;
     left: auto;
@@ -540,6 +600,16 @@ dd {
     grid-template-columns: 1fr 1fr;
     width: calc(100% - 32px);
     margin-top: 12px;
+  }
+
+  .world-hud {
+    position: fixed;
+    top: 270px;
+    transform: translateX(-50%);
+  }
+
+  .control-help {
+    bottom: 18px;
   }
 
   #street-label {

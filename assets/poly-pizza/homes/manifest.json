@@ -1,0 +1,391 @@
+[
+  {
+    "id": "bHyQe5jzdiQ",
+    "title": "Farm house",
+    "description": " ",
+    "category": "Buildings",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"Farm house\" by Poly by Google, https://poly.pizza/m/bHyQe5jzdiQ. Licence at https://creativecommons.org/licenses/by/3.0",
+    "sourceUrl": "https://poly.pizza/m/bHyQe5jzdiQ",
+    "creator": {
+      "Username": "Poly by Google",
+      "DPURL": "https://static.poly.pizza/dp%2Fpolygoogle.jpg"
+    },
+    "triCount": 2047,
+    "animated": false,
+    "tags": [
+      "pen",
+      "sty",
+      "home"
+    ],
+    "downloadUrl": "https://static.poly.pizza/fedcf063-38c2-4ece-b064-f29960dd2193.glb",
+    "thumbnailUrl": "https://static.poly.pizza/fedcf063-38c2-4ece-b064-f29960dd2193.webp",
+    "localModel": "assets/poly-pizza/homes/models/farm-house-bHyQe5jzdiQ.glb",
+    "localThumbnail": "assets/poly-pizza/homes/thumbnails/farm-house-bHyQe5jzdiQ.webp",
+    "bytes": {
+      "model": 1131980,
+      "thumbnail": 54480
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "75V_MLvKMqM",
+    "title": "House",
+    "description": "#home #abode #building #dwelling",
+    "category": "Buildings",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"House\" by Poly by Google, https://poly.pizza/m/75V_MLvKMqM. Licence at https://creativecommons.org/licenses/by/3.0",
+    "sourceUrl": "https://poly.pizza/m/75V_MLvKMqM",
+    "creator": {
+      "Username": "Poly by Google",
+      "DPURL": "https://static.poly.pizza/dp%2Fpolygoogle.jpg"
+    },
+    "triCount": 439,
+    "animated": false,
+    "tags": [
+      "home",
+      "abode",
+      "building",
+      "dwelling"
+    ],
+    "downloadUrl": "https://static.poly.pizza/bd8c9cad-072d-46bc-998f-1d31c3d85ce2.glb",
+    "thumbnailUrl": "https://static.poly.pizza/bd8c9cad-072d-46bc-998f-1d31c3d85ce2.webp",
+    "localModel": "assets/poly-pizza/homes/models/house-75V_MLvKMqM.glb",
+    "localThumbnail": "assets/poly-pizza/homes/thumbnails/house-75V_MLvKMqM.webp",
+    "bytes": {
+      "model": 234264,
+      "thumbnail": 34326
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "bvLXsDt9mww",
+    "title": "Home Blocks Home",
+    "description": " ",
+    "category": "Buildings",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"Home Blocks Home\" by Julien Kleber (Juliusprod), https://poly.pizza/m/bvLXsDt9mww. Licence at https://creativecommons.org/licenses/by/3.0",
+    "sourceUrl": "https://poly.pizza/m/bvLXsDt9mww",
+    "creator": {
+      "Username": "Julien Kleber (Juliusprod)",
+      "DPURL": "https://static.poly.pizza/dp%2Fnull.jpg"
+    },
+    "triCount": 60102,
+    "animated": false,
+    "tags": [
+      "igloo",
+      "basis",
+      "chock"
+    ],
+    "downloadUrl": "https://static.poly.pizza/17f0a302-a297-4862-9a80-4df04bf57633.glb",
+    "thumbnailUrl": "https://static.poly.pizza/17f0a302-a297-4862-9a80-4df04bf57633.webp",
+    "localModel": "assets/poly-pizza/homes/models/home-blocks-home-bvLXsDt9mww.glb",
+    "localThumbnail": "assets/poly-pizza/homes/thumbnails/home-blocks-home-bvLXsDt9mww.webp",
+    "bytes": {
+      "model": 5107556,
+      "thumbnail": 65182
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "dtgO5dwwtkk",
+    "title": "Apartment 2",
+    "description": " ",
+    "category": "Buildings",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"Apartment 2\" by Gabriele Romagnoli, https://poly.pizza/m/dtgO5dwwtkk. Licence at https://creativecommons.org/licenses/by/3.0",
+    "sourceUrl": "https://poly.pizza/m/dtgO5dwwtkk",
+    "creator": {
+      "Username": "Gabriele Romagnoli",
+      "DPURL": "https://static.poly.pizza/dp%2Fnull.jpg"
+    },
+    "triCount": 7530,
+    "animated": false,
+    "tags": [
+      "apartments",
+      "building",
+      "home",
+      "house",
+      "interior",
+      "room"
+    ],
+    "downloadUrl": "https://static.poly.pizza/6430de99-980b-4039-a327-eabfe1f63918.glb",
+    "thumbnailUrl": "https://static.poly.pizza/6430de99-980b-4039-a327-eabfe1f63918.webp",
+    "localModel": "assets/poly-pizza/homes/models/apartment-2-dtgO5dwwtkk.glb",
+    "localThumbnail": "assets/poly-pizza/homes/thumbnails/apartment-2-dtgO5dwwtkk.webp",
+    "bytes": {
+      "model": 894344,
+      "thumbnail": 42422
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "4NNkEGLAdOb",
+    "title": "Chilled Cow Apt",
+    "description": "Test",
+    "category": "Buildings",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"Chilled Cow Apt\" by Julien Kleber (Juliusprod), https://poly.pizza/m/4NNkEGLAdOb. Licence at https://creativecommons.org/licenses/by/3.0",
+    "sourceUrl": "https://poly.pizza/m/4NNkEGLAdOb",
+    "creator": {
+      "Username": "Julien Kleber (Juliusprod)",
+      "DPURL": "https://static.poly.pizza/dp%2Fnull.jpg"
+    },
+    "triCount": 26404,
+    "animated": false,
+    "tags": [
+      "home",
+      "interior",
+      "apartment"
+    ],
+    "downloadUrl": "https://static.poly.pizza/81c93ce6-5489-4cf4-b8ca-f5a2244c3b27.glb",
+    "thumbnailUrl": "https://static.poly.pizza/81c93ce6-5489-4cf4-b8ca-f5a2244c3b27.webp",
+    "localModel": "assets/poly-pizza/homes/models/chilled-cow-apt-4NNkEGLAdOb.glb",
+    "localThumbnail": "assets/poly-pizza/homes/thumbnails/chilled-cow-apt-4NNkEGLAdOb.webp",
+    "bytes": {
+      "model": 6157964,
+      "thumbnail": 70660
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "f7uccD5iyz0",
+    "title": "Log cabin",
+    "description": "#camp #house #home #lodge",
+    "category": "Buildings",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"Log cabin\" by Poly by Google, https://poly.pizza/m/f7uccD5iyz0. Licence at https://creativecommons.org/licenses/by/3.0",
+    "sourceUrl": "https://poly.pizza/m/f7uccD5iyz0",
+    "creator": {
+      "Username": "Poly by Google",
+      "DPURL": "https://static.poly.pizza/dp%2Fpolygoogle.jpg"
+    },
+    "triCount": 3334,
+    "animated": false,
+    "tags": [
+      "camp",
+      "house",
+      "home",
+      "lodge"
+    ],
+    "downloadUrl": "https://static.poly.pizza/0647436a-ac3f-4e34-abdd-01f57e43cc2f.glb",
+    "thumbnailUrl": "https://static.poly.pizza/0647436a-ac3f-4e34-abdd-01f57e43cc2f.webp",
+    "localModel": "assets/poly-pizza/homes/models/log-cabin-f7uccD5iyz0.glb",
+    "localThumbnail": "assets/poly-pizza/homes/thumbnails/log-cabin-f7uccD5iyz0.webp",
+    "bytes": {
+      "model": 223044,
+      "thumbnail": 41446
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "2K3bGB-w2qa",
+    "title": "Brit's House",
+    "description": "Come over any time!",
+    "category": "Buildings",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"Brit's House\" by Anonymous, https://poly.pizza/m/2K3bGB-w2qa. Licence at https://creativecommons.org/licenses/by/3.0",
+    "sourceUrl": "https://poly.pizza/m/2K3bGB-w2qa",
+    "creator": {
+      "Username": "Anonymous",
+      "DPURL": "https://static.poly.pizza/dp%2Fnull.jpg"
+    },
+    "triCount": 18726,
+    "animated": false,
+    "tags": [
+      "building",
+      "home"
+    ],
+    "downloadUrl": "https://static.poly.pizza/6b773767-e69b-4d74-ad7e-a0b0aee1d21a.glb",
+    "thumbnailUrl": "https://static.poly.pizza/6b773767-e69b-4d74-ad7e-a0b0aee1d21a.webp",
+    "localModel": "assets/poly-pizza/homes/models/brit-s-house-2K3bGB-w2qa.glb",
+    "localThumbnail": "assets/poly-pizza/homes/thumbnails/brit-s-house-2K3bGB-w2qa.webp",
+    "bytes": {
+      "model": 622680,
+      "thumbnail": 34370
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "6PGyqELX8M-",
+    "title": "House",
+    "description": "#home #building",
+    "category": "Buildings",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"House\" by Poly by Google, https://poly.pizza/m/6PGyqELX8M-. Licence at https://creativecommons.org/licenses/by/3.0",
+    "sourceUrl": "https://poly.pizza/m/6PGyqELX8M-",
+    "creator": {
+      "Username": "Poly by Google",
+      "DPURL": "https://static.poly.pizza/dp%2Fpolygoogle.jpg"
+    },
+    "triCount": 1272,
+    "animated": false,
+    "tags": [
+      "home",
+      "building"
+    ],
+    "downloadUrl": "https://static.poly.pizza/f9f95a03-c9c4-4e3e-bae1-65c490796fe1.glb",
+    "thumbnailUrl": "https://static.poly.pizza/f9f95a03-c9c4-4e3e-bae1-65c490796fe1.webp",
+    "localModel": "assets/poly-pizza/homes/models/house-6PGyqELX8M-.glb",
+    "localThumbnail": "assets/poly-pizza/homes/thumbnails/house-6PGyqELX8M-.webp",
+    "bytes": {
+      "model": 119908,
+      "thumbnail": 23240
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "053kskrV4U_",
+    "title": "Small House",
+    "description": " ",
+    "category": "Buildings",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"Small House\" by Jarlan Perez, https://poly.pizza/m/053kskrV4U_. Licence at https://creativecommons.org/licenses/by/3.0",
+    "sourceUrl": "https://poly.pizza/m/053kskrV4U_",
+    "creator": {
+      "Username": "Jarlan Perez",
+      "DPURL": "https://static.poly.pizza/dp%2Fnull.jpg"
+    },
+    "triCount": 3800,
+    "animated": false,
+    "tags": [
+      "lodge",
+      "cot",
+      "home"
+    ],
+    "downloadUrl": "https://static.poly.pizza/f5da7568-4b84-48a3-886f-9f432c576487.glb",
+    "thumbnailUrl": "https://static.poly.pizza/f5da7568-4b84-48a3-886f-9f432c576487.webp",
+    "localModel": "assets/poly-pizza/homes/models/small-house-053kskrV4U_.glb",
+    "localThumbnail": "assets/poly-pizza/homes/thumbnails/small-house-053kskrV4U_.webp",
+    "bytes": {
+      "model": 222652,
+      "thumbnail": 26650
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "bnZkUs4qEdG",
+    "title": "House with driveway",
+    "description": "#home #building",
+    "category": "Buildings",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"House with driveway\" by Poly by Google, https://poly.pizza/m/bnZkUs4qEdG. Licence at https://creativecommons.org/licenses/by/3.0",
+    "sourceUrl": "https://poly.pizza/m/bnZkUs4qEdG",
+    "creator": {
+      "Username": "Poly by Google",
+      "DPURL": "https://static.poly.pizza/dp%2Fpolygoogle.jpg"
+    },
+    "triCount": 2180,
+    "animated": false,
+    "tags": [
+      "home",
+      "building"
+    ],
+    "downloadUrl": "https://static.poly.pizza/908c7443-5ea4-4867-abdc-752e20c7f11e.glb",
+    "thumbnailUrl": "https://static.poly.pizza/908c7443-5ea4-4867-abdc-752e20c7f11e.webp",
+    "localModel": "assets/poly-pizza/homes/models/house-with-driveway-bnZkUs4qEdG.glb",
+    "localThumbnail": "assets/poly-pizza/homes/thumbnails/house-with-driveway-bnZkUs4qEdG.webp",
+    "bytes": {
+      "model": 1726240,
+      "thumbnail": 39598
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "dTSrDa0oz0a",
+    "title": "Cabin",
+    "description": "#wood #house #living #home #lifestyle #natural",
+    "category": "Buildings",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"Cabin\" by Poly by Google, https://poly.pizza/m/dTSrDa0oz0a. Licence at https://creativecommons.org/licenses/by/3.0",
+    "sourceUrl": "https://poly.pizza/m/dTSrDa0oz0a",
+    "creator": {
+      "Username": "Poly by Google",
+      "DPURL": "https://static.poly.pizza/dp%2Fpolygoogle.jpg"
+    },
+    "triCount": 1900,
+    "animated": false,
+    "tags": [
+      "wood",
+      "house",
+      "living",
+      "home",
+      "lifestyle",
+      "natural"
+    ],
+    "downloadUrl": "https://static.poly.pizza/883545f1-da34-492d-9cba-ef5c97f3476d.glb",
+    "thumbnailUrl": "https://static.poly.pizza/883545f1-da34-492d-9cba-ef5c97f3476d.webp",
+    "localModel": "assets/poly-pizza/homes/models/cabin-dTSrDa0oz0a.glb",
+    "localThumbnail": "assets/poly-pizza/homes/thumbnails/cabin-dTSrDa0oz0a.webp",
+    "bytes": {
+      "model": 170788,
+      "thumbnail": 39688
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "diphAid-jq6",
+    "title": "House",
+    "description": "",
+    "category": "Buildings",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"House\" by Peter Le Bek, https://poly.pizza/m/diphAid-jq6. Licence at https://creativecommons.org/licenses/by/3.0",
+    "sourceUrl": "https://poly.pizza/m/diphAid-jq6",
+    "creator": {
+      "Username": "Peter Le Bek",
+      "DPURL": "https://static.poly.pizza/dp%2Fnull.jpg"
+    },
+    "triCount": 1350,
+    "animated": false,
+    "tags": [
+      "mansion",
+      "home",
+      "family"
+    ],
+    "downloadUrl": "https://static.poly.pizza/92848c7d-e539-4853-9a55-6320a91a6a04.glb",
+    "thumbnailUrl": "https://static.poly.pizza/92848c7d-e539-4853-9a55-6320a91a6a04.webp",
+    "localModel": "assets/poly-pizza/homes/models/house-diphAid-jq6.glb",
+    "localThumbnail": "assets/poly-pizza/homes/thumbnails/house-diphAid-jq6.webp",
+    "bytes": {
+      "model": 263736,
+      "thumbnail": 29716
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  }
+]

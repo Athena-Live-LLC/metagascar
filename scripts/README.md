@@ -69,3 +69,69 @@ The downloader also reads standard ERC-721 data:
 - `tokenByIndex(uint256 index)`
 - `ownerOf(uint256 tokenId)`
 - `tokenURI(uint256 tokenId)`
+
+## Download Poly Pizza House Models
+
+Poly Pizza requires an API key. Create one at:
+
+```txt
+https://poly.pizza/settings/api
+```
+
+Then add it to your local `.env` file. Do not commit the key.
+
+```sh
+POLY_PIZZA_API_KEY="YOUR_KEY"
+```
+
+Run the downloader:
+
+```sh
+npm run download:poly-houses
+```
+
+The default search downloads 10 `house` models from the Buildings / architecture
+category into:
+
+```txt
+assets/poly-pizza/houses/
+```
+
+The script writes:
+
+- `models/*.glb`
+- `thumbnails/*`
+- `manifest.json`
+- `ATTRIBUTION.md`
+
+Useful options:
+
+```sh
+# Preview matches without downloading files
+npm run download:poly-houses -- --dry-run
+
+# Download 20 CC0 building/house models
+npm run download:poly-houses -- --limit 20 --license cc0
+
+# Search a different building style
+npm run download:poly-houses -- --query "villa" --limit 12
+```
+
+## Calibrate Poly Pizza Model Scale
+
+Downloaded GLB files do not share a consistent unit scale. Run the calibration
+script after adding or removing house assets:
+
+```sh
+npm run calibrate:poly-houses
+```
+
+This writes:
+
+```txt
+assets/poly-pizza/model-calibration.json
+```
+
+The map uses that file to normalize every imported house against a 1.0-unit
+door height, standard story heights, and a target house footprint before adding
+the smaller on-chain `Home Size` variation.

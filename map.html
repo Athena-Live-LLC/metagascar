@@ -29,10 +29,10 @@
 
       <section class="map-copy" aria-labelledby="map-title">
         <p class="eyebrow">3D MetaIsland district</p>
-        <h1 id="map-title">Pick a house on the street.</h1>
+        <h1 id="map-title">Walk the Metagascar block.</h1>
         <p>
-          Twenty mintable Metagascar lots are laid out at a time, ten per side. Drag to look around,
-          click a house to inspect its live on-chain land, home style, size, driveway, and mint status.
+          Enter the 3D world, walk the street, and inspect houses built from live on-chain
+          Metagascar land, home, driveway, and mint data.
         </p>
       </section>
 
@@ -43,10 +43,15 @@
       </aside>
 
       <aside class="street-controls" aria-label="Street navigation">
-        <button id="walk-forward" type="button">Up Street</button>
-        <span id="street-label">Street start</span>
-        <button id="walk-back" type="button">Down Street</button>
+        <button id="walk-forward" type="button">Enter World</button>
+        <span id="street-label">WASD + mouse</span>
+        <button id="walk-back" type="button">Reset View</button>
       </aside>
+
+      <div class="world-hud" aria-hidden="true">
+        <span class="crosshair"></span>
+        <span class="control-help">WASD move · Shift sprint · Mouse look · Click house · Esc unlock</span>
+      </div>
 
       <aside class="detail-panel" aria-live="polite" aria-label="Selected house details">
         <div class="panel-topline">
@@ -90,6 +95,8 @@
       <div class="toast" id="toast" role="status" aria-live="polite"></div>
     </main>
 
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
     <script type="module" src="map.js"></script>
   </body>
 </html>

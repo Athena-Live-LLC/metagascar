@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "download:contract": "node scripts/download-metagascar-contract-data.mjs",
-    "download:contract:sample": "node scripts/download-metagascar-contract-data.mjs --limit 5"
+    "download:contract:sample": "node scripts/download-metagascar-contract-data.mjs --limit 5",
+    "download:poly-houses": "node scripts/download-poly-pizza-houses.mjs",
+    "calibrate:poly-houses": "node scripts/calibrate-poly-pizza-models.mjs"
   },
   "dependencies": {
     "ethers": "^6.15.0"

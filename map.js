@@ -1,5 +1,6 @@
-import * as THREE from "https://unpkg.com/three@0.165.0/build/three.module.js";
 import { ethers } from "https://cdn.jsdelivr.net/npm/ethers@6.15.0/+esm";
+
+const BABYLON = window.BABYLON;
 
 const CONTRACT_ADDRESS = "0xF286E4955557361a7D245358b0D47a3f5c735B2e";
 const CONTRACT_ABI = [
@@ -13,22 +14,42 @@ const CONTRACT_ABI = [
   "function getDrivewayStyle(uint256 tokenId) view returns (string)",
   "function claim(uint256 tokenId) payable"
 ];
+
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const ETH_MAINNET = "0x1";
 const PAGE_SIZE = 20;
+const LOTS_PER_SIDE = PAGE_SIZE / 2;
+const MAX_MODEL_BYTES = 1_350_000;
 const PUBLIC_MINT_START = 1001;
 const PUBLIC_MINT_END = 8000;
-const BLOCK_LENGTH = 88;
-const ROAD_WIDTH = 6.4;
+const ROAD_WIDTH = 6.8;
 const ROAD_HALF = ROAD_WIDTH / 2;
-const STREET_START_Z = 18;
-const STREET_END_Z = -50;
+const STREET_START_Z = 28;
 const SPLIT_Z = -46;
-const CROSS_STREET_WIDTH = 7.0;
-const CROSS_STREET_LENGTH = 28;
+const CROSS_STREET_WIDTH = 7.2;
+const CROSS_STREET_LENGTH = 34;
+const INTERSECTION_CLEARANCE_Z = SPLIT_Z + CROSS_STREET_WIDTH / 2 + 3.6;
+const FIRST_LOT_Z = 15;
+const LAST_LOT_Z = INTERSECTION_CLEARANCE_Z + 3.2;
 const SIDEWALK_WIDTH = 1.35;
-const PARCEL_CENTER_X = 8.15;
-const LOT_SPACING = 6.35;
+const PARCEL_CENTER_X = 8.45;
+const LOT_SPACING = (FIRST_LOT_Z - LAST_LOT_Z) / (LOTS_PER_SIDE - 1);
+const STREET_DECOR_ROWS = 10;
+const STREET_DECOR_SPACING = (FIRST_LOT_Z - LAST_LOT_Z) / (STREET_DECOR_ROWS - 1);
+const STANDARD_DOOR_HEIGHT = 1.0;
+const STANDARD_FLOOR_HEIGHT = 1.45;
+const ROOF_HEIGHT_ALLOWANCE = 0.5;
+const FALLBACK_DOOR_HEIGHT = 0.82;
+const FALLBACK_DOOR_WIDTH = 0.34;
+const MIN_REASONABLE_MODEL_SCALE = 0.01;
+const MAX_REASONABLE_MODEL_SCALE = 28.0;
+const MAX_VERTICAL_STRETCH = 2.4;
+const MAX_FINAL_HOUSE_HEIGHT = 5.1;
+const CALIBRATION_URL = "assets/poly-pizza/model-calibration.json";
+const ASSET_MANIFESTS = [
+  "assets/poly-pizza/houses/manifest.json",
+  "assets/poly-pizza/homes/manifest.json"
+];
 
 const canvas = document.querySelector("#map-scene");
 const connectButton = document.querySelector("#connect-wallet");
@@ -57,98 +78,105 @@ const details = {
 };
 
 let houseData = [];
+let assetModels = [];
+let modelCalibration = null;
 let visibleOffset = 0;
 let selectedHouse = null;
-let selectedMesh = null;
+let selectedNode = null;
 let signer = null;
 let readContract = null;
 let writeContract = null;
 let mintPrice = null;
 let walletAddress = null;
-let streetFocusZ = 8;
-let targetStreetFocusZ = 8;
 
-const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x071310, 0.035);
+const engine = new BABYLON.Engine(canvas, true, {
+  preserveDrawingBuffer: true,
+  stencil: true,
+  antialias: true
+});
+engine.setHardwareScalingLevel(Math.min(window.devicePixelRatio, 2) / window.devicePixelRatio);
 
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new BABYLON.Scene(engine);
+scene.clearColor = new BABYLON.Color4(0.02, 0.07, 0.06, 1);
+scene.fogMode = BABYLON.Scene.FOGMODE_EXP2;
+scene.fogDensity = 0.025;
+scene.fogColor = new BABYLON.Color3(0.03, 0.09, 0.08);
+scene.collisionsEnabled = true;
 
-const camera = new THREE.PerspectiveCamera(52, window.innerWidth / window.innerHeight, 0.1, 180);
-camera.position.set(0, 9.5, 18);
-camera.lookAt(0, 0, -8);
+const camera = new BABYLON.UniversalCamera("playerCamera", new BABYLON.Vector3(0, 2.1, 27), scene);
+camera.minZ = 0.05;
+camera.maxZ = 180;
+camera.fov = 0.92;
+camera.speed = 0.82;
+camera.angularSensibility = 2600;
+camera.inertia = 0.42;
+camera.checkCollisions = true;
+camera.ellipsoid = new BABYLON.Vector3(0.55, 0.9, 0.55);
+camera.setTarget(new BABYLON.Vector3(0, 1.35, -6));
+camera.attachControl(canvas, true);
+scene.activeCamera = camera;
 
-const raycaster = new THREE.Raycaster();
-const pointer = new THREE.Vector2();
-const mouseDrift = new THREE.Vector2();
-const clickableMeshes = [];
-const mapRoot = new THREE.Group();
-scene.add(mapRoot);
+const WALK_SPEED = 8.5;
+const SPRINT_SPEED = 16;
+const movementKeys = new Set();
 
-function makeAsphaltTexture() {
-  const size = 128;
-  const textureCanvas = document.createElement("canvas");
-  textureCanvas.width = size;
-  textureCanvas.height = size;
-  const ctx = textureCanvas.getContext("2d");
-  ctx.fillStyle = "#17191b";
-  ctx.fillRect(0, 0, size, size);
-  for (let index = 0; index < 1400; index += 1) {
-    const shade = 32 + Math.floor(Math.random() * 36);
-    ctx.fillStyle = `rgba(${shade},${shade + 2},${shade + 4},0.28)`;
-    ctx.fillRect(Math.random() * size, Math.random() * size, 1, 1);
-  }
-  const texture = new THREE.CanvasTexture(textureCanvas);
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(4, 38);
-  return texture;
+const light = new BABYLON.HemisphericLight("skyLight", new BABYLON.Vector3(0.25, 1, 0.2), scene);
+light.intensity = 0.82;
+light.groundColor = new BABYLON.Color3(0.18, 0.08, 0.2);
+
+const sun = new BABYLON.DirectionalLight("sun", new BABYLON.Vector3(-0.35, -0.82, -0.18), scene);
+sun.position = new BABYLON.Vector3(14, 22, 10);
+sun.intensity = 2.25;
+
+const glowLight = new BABYLON.PointLight("metagascarGlow", new BABYLON.Vector3(0, 5, -15), scene);
+glowLight.diffuse = BABYLON.Color3.FromHexString("#7cffc4");
+glowLight.intensity = 0.65;
+glowLight.range = 45;
+
+const shadowGenerator = new BABYLON.ShadowGenerator(1024, sun);
+shadowGenerator.useBlurExponentialShadowMap = true;
+shadowGenerator.blurKernel = 24;
+shadowGenerator.getShadowMap().refreshRate = BABYLON.RenderTargetTexture.REFRESHRATE_RENDER_ONCE;
+
+const dynamicNodes = [];
+const pickableMeshes = [];
+const materialCache = new Map();
+
+function mat(name, hex, options = {}) {
+  if (materialCache.has(name)) return materialCache.get(name);
+  const material = new BABYLON.StandardMaterial(name, scene);
+  material.diffuseColor = BABYLON.Color3.FromHexString(hex);
+  material.specularColor = BABYLON.Color3.FromHexString(options.specular || "#111111");
+  material.emissiveColor = BABYLON.Color3.FromHexString(options.emissive || "#000000");
+  material.alpha = options.alpha ?? 1;
+  if (material.alpha < 1) material.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
+  materialCache.set(name, material);
+  return material;
 }
 
-const asphaltTexture = makeAsphaltTexture();
-
 const materials = {
-  road: new THREE.MeshStandardMaterial({ color: 0x1a1d1e, map: asphaltTexture, roughness: 0.86, metalness: 0.03 }),
-  stripe: new THREE.MeshBasicMaterial({ color: 0xd7ff3f }),
-  roadLine: new THREE.MeshBasicMaterial({ color: 0xf4ffe9 }),
-  grass: new THREE.MeshStandardMaterial({ color: 0x42a85a, roughness: 0.86 }),
-  sidewalk: new THREE.MeshStandardMaterial({ color: 0xa9b5aa, roughness: 0.9, metalness: 0.02 }),
-  curb: new THREE.MeshStandardMaterial({ color: 0xe1e7dc, roughness: 0.68 }),
-  crosswalk: new THREE.MeshBasicMaterial({ color: 0xf4ffe9 }),
-  lot: new THREE.MeshStandardMaterial({ color: 0x1d3f34, roughness: 0.8 }),
-  gravel: new THREE.MeshStandardMaterial({ color: 0xa5a99f, roughness: 0.95 }),
-  asphalt: new THREE.MeshStandardMaterial({ color: 0x24282a, roughness: 0.82 }),
-  brick: new THREE.MeshStandardMaterial({ color: 0xa74835, roughness: 0.78 }),
-  concrete: new THREE.MeshStandardMaterial({ color: 0xbac2ba, roughness: 0.76 }),
-  basalt: new THREE.MeshStandardMaterial({ color: 0x111719, roughness: 0.7 }),
-  cobble: new THREE.MeshStandardMaterial({ color: 0x7f8d84, roughness: 0.92 }),
-  crushedStone: new THREE.MeshStandardMaterial({ color: 0xd6d9ce, roughness: 0.96 }),
-  selectedLot: new THREE.MeshStandardMaterial({ color: 0x7cffc4, roughness: 0.5, emissive: 0x156b4c }),
-  glass: new THREE.MeshStandardMaterial({ color: 0x7cffc4, roughness: 0.2, metalness: 0.1, transparent: true, opacity: 0.58 }),
-  coral: new THREE.MeshStandardMaterial({ color: 0xff6f61, roughness: 0.52, emissive: 0x4c0a07, emissiveIntensity: 0.22 }),
-  orchid: new THREE.MeshStandardMaterial({ color: 0xc67dff, roughness: 0.46, emissive: 0x35145a, emissiveIntensity: 0.25 }),
-  aqua: new THREE.MeshStandardMaterial({ color: 0x3be7ff, roughness: 0.34, emissive: 0x07384b, emissiveIntensity: 0.2 }),
-  volt: new THREE.MeshStandardMaterial({ color: 0xd7ff3f, roughness: 0.42, emissive: 0x607300, emissiveIntensity: 0.28 }),
-  dark: new THREE.MeshStandardMaterial({ color: 0x101817, roughness: 0.74 }),
-  chrome: new THREE.MeshStandardMaterial({ color: 0xe9fff9, roughness: 0.26, metalness: 0.74 })
+  road: mat("road", "#17191b", { specular: "#080808" }),
+  roadLine: mat("roadLine", "#f4ffe9", { emissive: "#293125" }),
+  stripe: mat("stripe", "#d7ff3f", { emissive: "#415000" }),
+  grass: mat("grass", "#35a557"),
+  lot: mat("lot", "#1a4637"),
+  sidewalk: mat("sidewalk", "#aeb9ae"),
+  curb: mat("curb", "#e1e7dc"),
+  concrete: mat("concrete", "#b9c0b8"),
+  brick: mat("brick", "#a74835"),
+  asphalt: mat("driveAsphalt", "#25292b"),
+  gravel: mat("gravel", "#a5aa9f"),
+  basalt: mat("basalt", "#111719"),
+  cobble: mat("cobble", "#7f8d84"),
+  shell: mat("shell", "#d6d9ce"),
+  glass: mat("glass", "#7cffc4", { alpha: 0.55, emissive: "#10372d" }),
+  aqua: mat("aqua", "#3be7ff", { emissive: "#052e36" }),
+  coral: mat("coral", "#ff6f61", { emissive: "#42100c" }),
+  orchid: mat("orchid", "#c67dff", { emissive: "#2a0d44" }),
+  volt: mat("volt", "#d7ff3f", { emissive: "#334000" }),
+  dark: mat("dark", "#101817"),
+  selected: mat("selected", "#7cffc4", { emissive: "#125d45", alpha: 0.72 })
 };
-
-const carMaterials = [
-  new THREE.MeshStandardMaterial({ color: 0x3be7ff, roughness: 0.45, metalness: 0.18 }),
-  new THREE.MeshStandardMaterial({ color: 0xff6f61, roughness: 0.5, metalness: 0.12 }),
-  new THREE.MeshStandardMaterial({ color: 0xc67dff, roughness: 0.48, metalness: 0.16 }),
-  new THREE.MeshStandardMaterial({ color: 0xf4ffe9, roughness: 0.42, metalness: 0.2 })
-];
-
-scene.add(new THREE.HemisphereLight(0xcfffe6, 0x24172e, 2.7));
-const sun = new THREE.DirectionalLight(0xffffff, 3.2);
-sun.position.set(8, 13, 7);
-scene.add(sun);
-const neon = new THREE.PointLight(0x7cffc4, 3.8, 34);
-neon.position.set(0, 5, -8);
-scene.add(neon);
 
 function showToast(message) {
   toast.textContent = message;
@@ -169,6 +197,46 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function traitNumber(value, fallback) {
+  const match = String(value || "").match(/\d+/);
+  return match ? Number(match[0]) : fallback;
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function scaleFromRange(value, minValue, maxValue, minScale, maxScale) {
+  const normalized = (value - minValue) / (maxValue - minValue);
+  return minScale + clamp(normalized, 0, 1) * (maxScale - minScale);
+}
+
+function storyCountForHouse(house) {
+  const style = String(house.homeStyle || "").toLowerCase();
+  if (style.includes("apartment") || style.includes("second empire")) return 3;
+  if (style.includes("victorian") || style.includes("queen anne")) return 3;
+  if (style.includes("ranch") || style.includes("pueblo") || style.includes("cottage") || style.includes("cabin")) return 1;
+  return traitNumber(house.homeSize, 6000) > 7600 ? 2.5 : 2;
+}
+
+function targetHouseDimensions(house, parcelDepth, parcelFrontage, model) {
+  const homeSqft = traitNumber(house.homeSize, 6000);
+  const modelDefaults = model?.calibration || {};
+  const stories = modelDefaults.stories || storyCountForHouse(house);
+  const sizeFactor = clamp(Math.sqrt(homeSqft / 6200), 0.84, 1.18);
+  const heightFactor = clamp(sizeFactor, 0.94, 1.06);
+  const maxWidth = parcelFrontage * 0.76;
+  const maxDepth = parcelDepth * 0.74;
+  const baseWidth = modelDefaults.targetWidth || 2.55;
+  const baseDepth = modelDefaults.targetDepth || 2.25;
+  const baseHeight = modelDefaults.targetHeight || (stories * STANDARD_FLOOR_HEIGHT + ROOF_HEIGHT_ALLOWANCE);
+  const targetWidth = clamp(baseWidth * sizeFactor, 1.85, maxWidth);
+  const targetDepth = clamp(baseDepth * sizeFactor, 1.65, maxDepth);
+  const targetHeight = clamp(baseHeight * heightFactor, STANDARD_DOOR_HEIGHT * 1.75, MAX_FINAL_HOUSE_HEIGHT);
+
+  return { targetWidth, targetDepth, targetHeight, stories };
 }
 
 function decodeTokenMetadata(tokenURI) {
@@ -210,49 +278,22 @@ async function loadHouseDetails(house) {
   return house;
 }
 
-function houseColor(house, index) {
-  const text = `${house.homeStyle} ${house.drivewayStyle}`.toLowerCase();
-  if (text.includes("pueblo") || text.includes("valet")) return materials.coral;
-  if (text.includes("monterey") || text.includes("oyster")) return materials.orchid;
-  if (text.includes("second") || text.includes("crushed")) return materials.aqua;
-  return [materials.volt, materials.glass, materials.coral, materials.orchid, materials.aqua][index % 5];
+function createBox(name, width, height, depth, position, material, options = {}) {
+  const mesh = BABYLON.MeshBuilder.CreateBox(name, { width, height, depth }, scene);
+  mesh.position = position;
+  mesh.material = material;
+  mesh.checkCollisions = options.collisions ?? false;
+  mesh.isPickable = options.pickable ?? false;
+  if (options.receiveShadows) mesh.receiveShadows = true;
+  if (options.castShadows) shadowGenerator.addShadowCaster(mesh);
+  if (options.dynamic) dynamicNodes.push(mesh);
+  return mesh;
 }
 
-function traitNumber(value, fallback) {
-  const match = String(value || "").match(/\d+/);
-  return match ? Number(match[0]) : fallback;
-}
-
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value));
-}
-
-function scaleFromRange(value, minValue, maxValue, minScale, maxScale) {
-  const normalized = (value - minValue) / (maxValue - minValue);
-  return minScale + clamp(normalized, 0, 1) * (maxScale - minScale);
-}
-
-function styleProfile(homeStyle) {
-  const style = String(homeStyle || "").toLowerCase();
-  if (style.includes("art deco") || style.includes("international") || style.includes("contemporary")) {
-    return { roof: "flat", width: 1.2, depth: 0.92, floors: 2, accent: materials.glass };
-  }
-  if (style.includes("pueblo") || style.includes("spanish") || style.includes("monterey")) {
-    return { roof: "flat", width: 1.1, depth: 1.06, floors: 1, accent: materials.coral };
-  }
-  if (style.includes("saltbox") || style.includes("cape cod") || style.includes("colonial") || style.includes("dutch")) {
-    return { roof: "gable", width: 1.0, depth: 1.0, floors: 2, accent: materials.volt };
-  }
-  if (style.includes("victorian") || style.includes("queen anne") || style.includes("second empire")) {
-    return { roof: "tower", width: 0.96, depth: 1.08, floors: 3, accent: materials.orchid };
-  }
-  if (style.includes("ranch") || style.includes("prairie") || style.includes("shed")) {
-    return { roof: "shed", width: 1.35, depth: 0.82, floors: 1, accent: materials.aqua };
-  }
-  if (style.includes("gothic") || style.includes("neoclassical") || style.includes("federal") || style.includes("georgian")) {
-    return { roof: "steep", width: 1.02, depth: 0.95, floors: 2, accent: materials.chrome };
-  }
-  return { roof: "hip", width: 1, depth: 1, floors: 2, accent: materials.volt };
+function createPlaneBox(name, width, depth, y, z, material, x = 0) {
+  return createBox(name, width, 0.05, depth, new BABYLON.Vector3(x, y, z), material, {
+    receiveShadows: true
+  });
 }
 
 function drivewayMaterial(driveway) {
@@ -262,408 +303,370 @@ function drivewayMaterial(driveway) {
   if (text.includes("concrete") || text.includes("paver")) return materials.concrete;
   if (text.includes("basalt")) return materials.basalt;
   if (text.includes("cobblestone")) return materials.cobble;
-  if (text.includes("crushed")) return materials.crushedStone;
+  if (text.includes("crushed")) return materials.shell;
   return materials.gravel;
 }
 
-function addWindows(group, width, height, depth, colorMaterial, frontSign) {
-  const windowMaterial = new THREE.MeshBasicMaterial({ color: 0xd7ff3f });
-  const floors = Math.max(1, Math.round(height / 0.75));
-  for (let floor = 0; floor < floors; floor += 1) {
-    [-0.28, 0.28].forEach((offset) => {
-      const frontWindow = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, 0.025), windowMaterial);
-      frontWindow.position.set(offset * width, 0.52 + floor * 0.48, frontSign * (depth / 2 + 0.016));
-      group.add(frontWindow);
-    });
-  }
-  const door = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.48, 0.03), colorMaterial);
-  door.position.set(-width * 0.2, 0.34, frontSign * (depth / 2 + 0.022));
-  group.add(door);
+function addStreetFurniture(side, z) {
+  const x = side * (ROAD_HALF + SIDEWALK_WIDTH + 0.15);
+  createBox("lampPost", 0.08, 2.2, 0.08, new BABYLON.Vector3(x, 1.1, z), materials.dark);
+  const lamp = BABYLON.MeshBuilder.CreateSphere("lampGlow", { diameter: 0.34, segments: 12 }, scene);
+  lamp.position = new BABYLON.Vector3(x, 2.32, z);
+  lamp.material = materials.volt;
+  dynamicNodes.push(lamp);
+  const point = new BABYLON.PointLight("streetLamp", lamp.position, scene);
+  point.diffuse = BABYLON.Color3.FromHexString("#d7ff3f");
+  point.intensity = 0.22;
+  point.range = 7;
 
-  const garage = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.42, 0.035), materials.chrome);
-  garage.position.set(width * 0.28, 0.31, frontSign * (depth / 2 + 0.024));
-  group.add(garage);
-
-  const porch = new THREE.Mesh(new THREE.BoxGeometry(width * 0.52, 0.05, 0.34), materials.sidewalk);
-  porch.position.set(0, 0.16, frontSign * (depth / 2 + 0.2));
-  group.add(porch);
+  const signX = side * (ROAD_HALF + SIDEWALK_WIDTH + 0.72);
+  createBox("streetSignPost", 0.06, 1.05, 0.06, new BABYLON.Vector3(signX, 0.55, z + 1.8), materials.curb);
+  createBox("streetSignPanel", 0.7, 0.28, 0.06, new BABYLON.Vector3(signX, 1.12, z + 1.8), materials.aqua);
 }
 
-function addRoof(group, profile, width, height, depth) {
-  if (profile.roof === "flat") {
-    const roof = new THREE.Mesh(new THREE.BoxGeometry(width * 1.08, 0.16, depth * 1.08), profile.accent);
-    roof.position.y = height + 0.22;
-    group.add(roof);
-    return;
-  }
-
-  if (profile.roof === "shed") {
-    const roof = new THREE.Mesh(new THREE.BoxGeometry(width * 1.12, 0.18, depth * 1.08), profile.accent);
-    roof.position.y = height + 0.24;
-    roof.rotation.z = 0.16;
-    group.add(roof);
-    return;
-  }
-
-  if (profile.roof === "tower") {
-    const roof = new THREE.Mesh(new THREE.ConeGeometry(Math.max(width, depth) * 0.58, 0.86, 6), profile.accent);
-    roof.position.y = height + 0.58;
-    group.add(roof);
-    const tower = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, height * 0.85, 8), materials.glass);
-    tower.position.set(width * 0.36, height * 0.58, -depth * 0.18);
-    group.add(tower);
-    return;
-  }
-
-  const segments = profile.roof === "steep" ? 3 : 4;
-  const roofHeight = profile.roof === "steep" ? 1.08 : 0.72;
-  const roof = new THREE.Mesh(new THREE.ConeGeometry(Math.max(width, depth) * 0.62, roofHeight, segments), profile.accent);
-  roof.position.y = height + roofHeight / 2 + 0.16;
-  roof.rotation.y = Math.PI / 4;
-  group.add(roof);
-}
-
-function addParkedCar(side, z, material) {
-  const car = new THREE.Group();
-  const body = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.34, 1.72), material);
-  body.position.y = 0.26;
-  const cabin = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.28, 0.72), materials.glass);
-  cabin.position.y = 0.58;
-  const wheelGeometry = new THREE.CylinderGeometry(0.14, 0.14, 0.1, 14);
-  [-0.36, 0.36].forEach((x) => {
-    [-0.58, 0.58].forEach((wheelZ) => {
-      const wheel = new THREE.Mesh(wheelGeometry, materials.dark);
+function addCar(side, z, material) {
+  const root = new BABYLON.TransformNode("parkedCar", scene);
+  root.position = new BABYLON.Vector3(side * (ROAD_HALF - 0.75), 0.04, z);
+  root.rotation.y = side < 0 ? Math.PI : 0;
+  createBox("carBody", 0.95, 0.32, 1.65, new BABYLON.Vector3(0, 0.28, 0), material).parent = root;
+  createBox("carCabin", 0.62, 0.26, 0.72, new BABYLON.Vector3(0, 0.58, -0.05), materials.glass).parent = root;
+  for (const x of [-0.42, 0.42]) {
+    for (const wheelZ of [-0.54, 0.54]) {
+      const wheel = BABYLON.MeshBuilder.CreateCylinder("wheel", { height: 0.12, diameter: 0.24, tessellation: 12 }, scene);
+      wheel.position = new BABYLON.Vector3(x, 0.17, wheelZ);
       wheel.rotation.z = Math.PI / 2;
-      wheel.position.set(x, 0.14, wheelZ);
-      car.add(wheel);
-    });
-  });
-  car.add(body, cabin);
-  car.position.set(side * (ROAD_HALF - 0.72), 0.06, z);
-  car.rotation.y = side < 0 ? Math.PI : 0;
-  mapRoot.add(car);
-}
-
-function addStreetSign(side, z, labelWidth = 0.64) {
-  const sign = new THREE.Group();
-  const post = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.035, 1.05, 8), materials.chrome);
-  post.position.y = 0.52;
-  const panel = new THREE.Mesh(new THREE.BoxGeometry(labelWidth, 0.28, 0.045), materials.aqua);
-  panel.position.y = 1.08;
-  sign.add(post, panel);
-  sign.position.set(side * (ROAD_HALF + SIDEWALK_WIDTH + 0.42), 0, z);
-  sign.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2;
-  mapRoot.add(sign);
-}
-
-function addStreetSplit() {
-  const crossRoad = new THREE.Mesh(new THREE.PlaneGeometry(CROSS_STREET_LENGTH, CROSS_STREET_WIDTH), materials.road);
-  crossRoad.rotation.x = -Math.PI / 2;
-  crossRoad.position.set(0, 0.019, SPLIT_Z);
-  mapRoot.add(crossRoad);
-
-  const stopBar = new THREE.Mesh(new THREE.PlaneGeometry(ROAD_WIDTH - 0.8, 0.18), materials.roadLine);
-  stopBar.rotation.x = -Math.PI / 2;
-  stopBar.position.set(0, 0.052, SPLIT_Z + CROSS_STREET_WIDTH * 0.52);
-  mapRoot.add(stopBar);
-
-  [-1, 1].forEach((side) => {
-    const branchStripe = new THREE.Mesh(new THREE.PlaneGeometry(6.2, 0.14), materials.stripe);
-    branchStripe.rotation.x = -Math.PI / 2;
-    branchStripe.position.set(side * 6.0, 0.052, SPLIT_Z);
-    mapRoot.add(branchStripe);
-
-    const outerCurb = new THREE.Mesh(new THREE.BoxGeometry(CROSS_STREET_LENGTH / 2 - 1.5, 0.18, 0.16), materials.curb);
-    outerCurb.position.set(side * 7.2, 0.12, SPLIT_Z - CROSS_STREET_WIDTH / 2);
-    mapRoot.add(outerCurb);
-
-    const innerCurb = new THREE.Mesh(new THREE.BoxGeometry(CROSS_STREET_LENGTH / 2 - 1.5, 0.18, 0.16), materials.curb);
-    innerCurb.position.set(side * 7.2, 0.12, SPLIT_Z + CROSS_STREET_WIDTH / 2);
-    mapRoot.add(innerCurb);
-
-    const sidewalk = new THREE.Mesh(new THREE.PlaneGeometry(CROSS_STREET_LENGTH / 2 - 1.2, SIDEWALK_WIDTH), materials.sidewalk);
-    sidewalk.rotation.x = -Math.PI / 2;
-    sidewalk.position.set(side * 7.15, 0.048, SPLIT_Z - CROSS_STREET_WIDTH / 2 - SIDEWALK_WIDTH / 2 - 0.24);
-    mapRoot.add(sidewalk);
-
-    const arrow = new THREE.Group();
-    const shaft = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.03, 0.18), materials.stripe);
-    const head = new THREE.Mesh(new THREE.ConeGeometry(0.34, 0.62, 3), materials.stripe);
-    head.rotation.z = side < 0 ? Math.PI / 2 : -Math.PI / 2;
-    head.position.x = side * 0.82;
-    arrow.add(shaft, head);
-    arrow.position.set(side * 2.2, 0.06, SPLIT_Z + 0.8);
-    mapRoot.add(arrow);
-
-    addStreetSign(side, SPLIT_Z + 3.1, 0.82);
-  });
+      wheel.material = materials.dark;
+      wheel.parent = root;
+    }
+  }
 }
 
 function addGround() {
-  const grass = new THREE.Mesh(new THREE.PlaneGeometry(38, BLOCK_LENGTH + 8), materials.grass);
-  grass.rotation.x = -Math.PI / 2;
-  grass.position.z = -18;
-  mapRoot.add(grass);
+  createPlaneBox("grass", 48, 100, -0.03, -18, materials.grass);
+  createPlaneBox("road", ROAD_WIDTH, 88, 0.02, -18, materials.road);
+  createPlaneBox("splitRoad", CROSS_STREET_LENGTH, CROSS_STREET_WIDTH, 0.03, SPLIT_Z, materials.road);
+  createPlaneBox("stopBar", ROAD_WIDTH - 0.8, 0.16, 0.07, SPLIT_Z + CROSS_STREET_WIDTH * 0.52, materials.roadLine);
 
-  const road = new THREE.Mesh(new THREE.PlaneGeometry(ROAD_WIDTH, BLOCK_LENGTH), materials.road);
-  road.rotation.x = -Math.PI / 2;
-  road.position.y = 0.015;
-  road.position.z = -18;
-  mapRoot.add(road);
-  addStreetSplit();
-
-  [-1, 1].forEach((side) => {
-    const curbX = side * (ROAD_HALF + 0.12);
+  for (const side of [-1, 1]) {
     const sidewalkX = side * (ROAD_HALF + SIDEWALK_WIDTH / 2 + 0.28);
-    const plantingX = side * (ROAD_HALF + SIDEWALK_WIDTH + 0.82);
-
-    const gutter = new THREE.Mesh(new THREE.PlaneGeometry(0.32, BLOCK_LENGTH), materials.asphalt);
-    gutter.rotation.x = -Math.PI / 2;
-    gutter.position.set(side * (ROAD_HALF - 0.16), 0.026, -18);
-    mapRoot.add(gutter);
-
-    const sidewalk = new THREE.Mesh(new THREE.PlaneGeometry(SIDEWALK_WIDTH, BLOCK_LENGTH), materials.sidewalk);
-    sidewalk.rotation.x = -Math.PI / 2;
-    sidewalk.position.set(sidewalkX, 0.045, -18);
-    mapRoot.add(sidewalk);
-
-    const curb = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.2, BLOCK_LENGTH), materials.curb);
-    curb.position.set(curbX, 0.12, -18);
-    mapRoot.add(curb);
-
-    const propertyEdge = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.08, BLOCK_LENGTH), materials.curb);
-    propertyEdge.position.set(side * (ROAD_HALF + SIDEWALK_WIDTH + 0.48), 0.08, -18);
-    mapRoot.add(propertyEdge);
-
-    for (let row = 0; row < 10; row += 1) {
-      const z = 15 - row * LOT_SPACING;
-      const treeTrunk = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.9, 8), materials.islandSide || materials.brick);
-      treeTrunk.position.set(plantingX, 0.48, z + 2.35);
-      mapRoot.add(treeTrunk);
-      const treeTop = new THREE.Mesh(new THREE.SphereGeometry(0.34, 14, 10), materials.volt);
-      treeTop.position.set(plantingX, 1.12, z + 2.35);
-      mapRoot.add(treeTop);
-    }
-  });
+    createPlaneBox("sidewalk", SIDEWALK_WIDTH, 88, 0.06, -18, materials.sidewalk, sidewalkX);
+    createBox("curb", 0.18, 0.18, 88, new BABYLON.Vector3(side * (ROAD_HALF + 0.12), 0.11, -18), materials.curb);
+    createBox("propertyEdge", 0.06, 0.08, 88, new BABYLON.Vector3(side * (ROAD_HALF + SIDEWALK_WIDTH + 0.48), 0.09, -18), materials.curb);
+    createBox("crossCurbNear", CROSS_STREET_LENGTH / 2 - 1.2, 0.16, 0.16, new BABYLON.Vector3(side * 7.8, 0.12, SPLIT_Z + CROSS_STREET_WIDTH / 2), materials.curb);
+    createBox("crossCurbFar", CROSS_STREET_LENGTH / 2 - 1.2, 0.16, 0.16, new BABYLON.Vector3(side * 7.8, 0.12, SPLIT_Z - CROSS_STREET_WIDTH / 2), materials.curb);
+    createPlaneBox("branchStripe", 6.5, 0.14, 0.08, SPLIT_Z, materials.stripe, side * 6.2);
+  }
 
   for (let index = 0; index < 15; index += 1) {
-    const stripe = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 1.8), materials.stripe);
-    stripe.rotation.x = -Math.PI / 2;
-    stripe.position.set(0, 0.032, 15 - index * 4.2);
-    mapRoot.add(stripe);
+    createPlaneBox("centerStripe", 0.2, 1.8, 0.08, FIRST_LOT_Z - index * 4.2, materials.stripe);
   }
 
-  [-1, 1].forEach((side) => {
-    const edgeLine = new THREE.Mesh(new THREE.PlaneGeometry(0.08, 63), materials.roadLine);
-    edgeLine.rotation.x = -Math.PI / 2;
-    edgeLine.position.set(side * (ROAD_HALF - 0.42), 0.038, -13.5);
-    mapRoot.add(edgeLine);
-
-    for (let row = 0; row < 8; row += 1) {
-      const parkingLine = new THREE.Mesh(new THREE.PlaneGeometry(0.06, 1.35), materials.roadLine);
-      parkingLine.rotation.x = -Math.PI / 2;
-      parkingLine.position.set(side * (ROAD_HALF - 1.15), 0.039, 12.2 - row * 8.2);
-      mapRoot.add(parkingLine);
-    }
-  });
-
-  [17.4, -43.2].forEach((z) => {
+  for (const z of [17.4, INTERSECTION_CLEARANCE_Z]) {
     for (let index = 0; index < 7; index += 1) {
-      const crosswalk = new THREE.Mesh(new THREE.PlaneGeometry(0.38, ROAD_WIDTH + 0.7), materials.crosswalk);
-      crosswalk.rotation.x = -Math.PI / 2;
-      crosswalk.rotation.z = Math.PI / 2;
-      crosswalk.position.set(-2.7 + index * 0.9, 0.041, z);
-      mapRoot.add(crosswalk);
+      createPlaneBox("crosswalk", 0.38, ROAD_WIDTH + 0.8, 0.09, z, materials.roadLine, -2.7 + index * 0.9);
     }
-  });
+  }
 
-  [-1, 1].forEach((side) => {
-    [10.8, -2.5, -21.5, -34.5].forEach((z, index) => {
-      addParkedCar(side, z, carMaterials[(index + (side > 0 ? 1 : 0)) % carMaterials.length]);
-    });
-    addStreetSign(side, 17.1);
-    addStreetSign(side, -42.7, 0.82);
-  });
-
-  for (let row = 0; row < 10; row += 1) {
-    const z = 15 - row * LOT_SPACING;
-    [-1, 1].forEach((side) => {
-      const x = side * (ROAD_HALF + SIDEWALK_WIDTH + 0.16);
-      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.06, 2.2, 12), materials.chrome);
-      post.position.set(x, 1.1, z - 2.35);
-      mapRoot.add(post);
-
-      const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 12), materials.volt);
-      lamp.position.set(x, 2.26, z - 2.35);
-      mapRoot.add(lamp);
-
-      const glow = new THREE.PointLight(0xd7ff3f, 0.65, 5.5);
-      glow.position.copy(lamp.position);
-      mapRoot.add(glow);
-    });
+  const carMaterials = [materials.aqua, materials.coral, materials.orchid, materials.curb];
+  for (const side of [-1, 1]) {
+    [10.8, -2.5, -18.8, -29.4].forEach((z, index) => addCar(side, z, carMaterials[(index + (side > 0 ? 1 : 0)) % carMaterials.length]));
+    for (let row = 0; row < STREET_DECOR_ROWS; row += 1) {
+      const z = FIRST_LOT_Z - row * STREET_DECOR_SPACING;
+      addStreetFurniture(side, z - 2.35);
+      const treeX = side * (ROAD_HALF + SIDEWALK_WIDTH + 0.86);
+      createBox("treeTrunk", 0.14, 0.9, 0.14, new BABYLON.Vector3(treeX, 0.48, z + 2.3), materials.brick);
+      const top = BABYLON.MeshBuilder.CreateSphere("treeTop", { diameter: 0.7, segments: 12 }, scene);
+      top.position = new BABYLON.Vector3(treeX, 1.12, z + 2.3);
+      top.material = materials.volt;
+    }
   }
 }
 
-function addPortalGate() {
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(3.2, 0.08, 16, 120), materials.glass);
-  ring.position.set(0, 4.1, -44);
-  ring.rotation.y = Math.PI / 2;
-  mapRoot.add(ring);
+async function loadAssetManifests() {
+  const calibration = await fetch(CALIBRATION_URL)
+    .then((response) => {
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
+    })
+    .catch((error) => {
+      console.warn(`Could not load ${CALIBRATION_URL}: ${error.message}`);
+      return { models: {} };
+    });
+  modelCalibration = calibration;
 
-  const core = new THREE.Mesh(
-    new THREE.CircleGeometry(3.05, 64),
-    new THREE.MeshBasicMaterial({ color: 0x7cffc4, transparent: true, opacity: 0.12, side: THREE.DoubleSide })
+  const manifests = await Promise.all(
+    ASSET_MANIFESTS.map(async (url) => {
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+      } catch (error) {
+        console.warn(`Could not load ${url}: ${error.message}`);
+        return [];
+      }
+    })
   );
-  core.position.copy(ring.position);
-  core.rotation.copy(ring.rotation);
-  mapRoot.add(core);
+
+  const byId = new Map();
+  for (const model of manifests.flat()) {
+    if (model?.localModel && !byId.has(model.id)) byId.set(model.id, model);
+  }
+  return Object.entries(calibration.models || {})
+    .filter(([_id, settings]) => settings.enabled)
+    .map(([id, settings]) => {
+      const model = byId.get(id);
+      return model ? { ...model, calibration: settings } : null;
+    })
+    .filter((model) => model && (model.bytes?.model || 0) <= MAX_MODEL_BYTES);
 }
 
-function createHouseMesh(house, slotIndex) {
-  const side = slotIndex < 10 ? -1 : 1;
-  const row = slotIndex % 10;
-  const z = 15 - row * LOT_SPACING;
-  const parcelCenterX = side * PARCEL_CENTER_X;
-  const group = new THREE.Group();
-  const landSqft = traitNumber(house.land, 18000);
+function meshBounds(meshes) {
+  let min = null;
+  let max = null;
+  for (const mesh of meshes) {
+    if (!mesh.getBoundingInfo) continue;
+    mesh.computeWorldMatrix(true);
+    const vectors = mesh.getBoundingInfo().boundingBox.vectorsWorld;
+    for (const vector of vectors) {
+      min = min ? BABYLON.Vector3.Minimize(min, vector) : vector.clone();
+      max = max ? BABYLON.Vector3.Maximize(max, vector) : vector.clone();
+    }
+  }
+  return min && max ? { min, max, size: max.subtract(min), center: min.add(max).scale(0.5) } : null;
+}
+
+function alignImportedHouse(meshes, modelRoot, root, targetLocalPosition) {
+  modelRoot.computeWorldMatrix(true);
+  for (const mesh of meshes) mesh.computeWorldMatrix(true);
+
+  const bounds = meshBounds(meshes);
+  if (!bounds) return;
+
+  const rootPosition = root.getAbsolutePosition();
+  const targetWorldCenter = rootPosition.add(targetLocalPosition);
+  const targetWorldBottom = rootPosition.y + targetLocalPosition.y;
+  modelRoot.position.addInPlace(new BABYLON.Vector3(
+    targetWorldCenter.x - bounds.center.x,
+    targetWorldBottom - bounds.min.y,
+    targetWorldCenter.z - bounds.center.z
+  ));
+}
+
+function modelMatchesHouse(model, house) {
+  const style = String(house.homeStyle || "").toLowerCase();
+  const kind = model?.calibration?.kind || "house";
+  if (style.includes("apartment") || style.includes("second empire")) return kind === "apartment";
+  if (style.includes("ranch") || style.includes("cottage") || style.includes("cabin") || style.includes("pueblo")) {
+    return kind === "small-house";
+  }
+  return kind === "house";
+}
+
+function selectAssetModel(house, slotIndex) {
+  if (assetModels.length === 0) return null;
+  const preferred = assetModels.filter((model) => modelMatchesHouse(model, house));
+  const models = preferred.length > 0 ? preferred : assetModels;
+  return models[slotIndex % models.length];
+}
+
+function finalModelFits(bounds, targetDimensions, parcelDepth, parcelFrontage) {
+  if (!bounds) return false;
+  const maxLotWidth = parcelFrontage * 0.88;
+  const maxLotDepth = parcelDepth * 0.84;
+  const maxHeight = Math.min(MAX_FINAL_HOUSE_HEIGHT + 0.4, targetDimensions.targetHeight * 1.28);
+  return (
+    bounds.size.x <= maxLotWidth &&
+    bounds.size.z <= maxLotDepth &&
+    bounds.size.y <= maxHeight &&
+    bounds.size.x >= 0.8 &&
+    bounds.size.z >= 0.7 &&
+    bounds.size.y >= STANDARD_DOOR_HEIGHT * 1.3
+  );
+}
+
+async function addAssetHouse(house, slotIndex, root, side, parcelDepth, parcelFrontage) {
+  const model = selectAssetModel(house, slotIndex);
+  if (!model) return;
+
+  const targetDimensions = targetHouseDimensions(house, parcelDepth, parcelFrontage, model);
+  const assetPath = model.localModel.replaceAll("\\", "/");
+  const slash = assetPath.lastIndexOf("/");
+  const rootUrl = `${assetPath.slice(0, slash + 1)}`;
+  const filename = assetPath.slice(slash + 1);
+
+  try {
+    const result = await BABYLON.SceneLoader.ImportMeshAsync("", rootUrl, filename, scene);
+    const importedNodes = [...result.meshes, ...result.transformNodes];
+    const meshes = result.meshes.filter((mesh) => mesh instanceof BABYLON.Mesh && mesh.getTotalVertices() > 0);
+
+    const modelRoot = new BABYLON.TransformNode(`polyHouse-${model.id}`, scene);
+    modelRoot.parent = root;
+    const targetLocalPosition = new BABYLON.Vector3(side * 0.85, 0.24, 0);
+    modelRoot.position = targetLocalPosition.clone();
+    modelRoot.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2;
+    modelRoot.metadata = { house, houseGroup: root, model };
+
+    const contentRoot = new BABYLON.TransformNode(`polyHouseContent-${model.id}`, scene);
+    contentRoot.parent = modelRoot;
+
+    for (const node of importedNodes) {
+      if (!node.parent || !importedNodes.includes(node.parent)) node.parent = contentRoot;
+    }
+
+    const bounds = meshBounds(meshes);
+    if (bounds) {
+      contentRoot.position = new BABYLON.Vector3(-bounds.center.x, -bounds.min.y, -bounds.center.z);
+      const widthScale = targetDimensions.targetWidth / Math.max(bounds.size.x, 0.01);
+      const depthScale = targetDimensions.targetDepth / Math.max(bounds.size.z, 0.01);
+      const heightScale = targetDimensions.targetHeight / Math.max(bounds.size.y, 0.01);
+      const planScale = clamp(Math.min(widthScale, depthScale), MIN_REASONABLE_MODEL_SCALE, MAX_REASONABLE_MODEL_SCALE);
+      const verticalScale = clamp(
+        heightScale,
+        planScale / MAX_VERTICAL_STRETCH,
+        Math.min(MAX_REASONABLE_MODEL_SCALE, planScale * MAX_VERTICAL_STRETCH)
+      );
+      modelRoot.scaling = new BABYLON.Vector3(planScale, verticalScale, planScale);
+    }
+
+    alignImportedHouse(meshes, modelRoot, root, targetLocalPosition);
+
+    const finalBounds = meshBounds(meshes);
+    if (!finalModelFits(finalBounds, targetDimensions, parcelDepth, parcelFrontage)) {
+      modelRoot.dispose();
+      console.warn(`Rejected Poly Pizza model ${model.id}; final bounds did not fit lot.`);
+      return;
+    }
+
+    for (const mesh of meshes) {
+      mesh.isPickable = true;
+      mesh.checkCollisions = false;
+      mesh.metadata = { house, houseGroup: root, model };
+      pickableMeshes.push(mesh);
+      shadowGenerator.addShadowCaster(mesh);
+    }
+
+    if (root.metadata?.placeholder) {
+      removePickables(root.metadata.placeholder.getChildMeshes(false));
+      root.metadata.placeholder.dispose();
+      root.metadata.placeholder = null;
+    }
+  } catch (error) {
+    console.warn(`Could not load Poly Pizza model ${model.localModel}: ${error.message}`);
+  }
+}
+
+function addFallbackHouse(house, slotIndex, root, side) {
+  const placeholder = new BABYLON.TransformNode("placeholderHome", scene);
+  placeholder.parent = root;
+  const colorMaterials = [materials.volt, materials.glass, materials.coral, materials.orchid, materials.aqua];
   const homeSqft = traitNumber(house.homeSize, 6000);
-  const profile = styleProfile(house.homeStyle);
-  const parcelDepth = scaleFromRange(landSqft, 15000, 91000, 4.4, 5.8);
-  const parcelFrontage = scaleFromRange(landSqft, 15000, 91000, 5.0, 6.1);
-  const baseWidth = scaleFromRange(homeSqft, 1200, 12000, 1.1, 2.35) * profile.width;
-  const baseDepth = scaleFromRange(homeSqft, 1200, 12000, 1.0, 2.05) * profile.depth;
-  const bodyHeight = scaleFromRange(homeSqft, 1200, 12000, 0.82, 1.85) + (profile.floors - 1) * 0.32;
+  const stories = storyCountForHouse(house);
+  const width = scaleFromRange(homeSqft, 1200, 12000, 1.2, 2.5);
+  const depth = scaleFromRange(homeSqft, 1200, 12000, 1.2, 2.2);
+  const height = Math.max(1.8, stories * 0.92 + 0.55);
+  const body = createBox("fallbackHome", width, height, depth, new BABYLON.Vector3(side * 0.85, 0.25 + height / 2, 0), colorMaterials[slotIndex % colorMaterials.length], {
+    pickable: true,
+    collisions: false,
+    castShadows: true
+  });
+  body.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2;
+  body.parent = placeholder;
+  body.metadata = { house, houseGroup: root };
+  pickableMeshes.push(body);
+
+  const frontZ = side < 0 ? depth / 2 + 0.025 : -depth / 2 - 0.025;
+  const door = createBox("fallbackDoor", FALLBACK_DOOR_WIDTH, FALLBACK_DOOR_HEIGHT, 0.04, new BABYLON.Vector3(side * 0.85 - width * 0.18, 0.25 + FALLBACK_DOOR_HEIGHT / 2, frontZ), materials.dark);
+  door.rotation.y = body.rotation.y;
+  door.parent = placeholder;
+
+  for (const xOffset of [-0.32, 0.28]) {
+    const windowMesh = createBox("fallbackWindow", 0.26, 0.22, 0.045, new BABYLON.Vector3(side * 0.85 + xOffset * width, 0.95, frontZ), materials.volt);
+    windowMesh.rotation.y = body.rotation.y;
+    windowMesh.parent = placeholder;
+  }
+
+  const roof = BABYLON.MeshBuilder.CreateCylinder("fallbackRoof", { diameterTop: 0, diameterBottom: Math.max(width, depth) * 1.2, height: 0.8, tessellation: 4 }, scene);
+  roof.position = new BABYLON.Vector3(side * 0.85, height + 0.7, 0);
+  roof.rotation.y = Math.PI / 4;
+  roof.material = materials.volt;
+  roof.parent = placeholder;
+  return placeholder;
+}
+
+function removePickables(meshes) {
+  for (const mesh of meshes) {
+    const index = pickableMeshes.indexOf(mesh);
+    if (index !== -1) pickableMeshes.splice(index, 1);
+  }
+}
+
+function createHouseLot(house, slotIndex) {
+  const side = slotIndex < LOTS_PER_SIDE ? -1 : 1;
+  const row = slotIndex % LOTS_PER_SIDE;
+  const z = FIRST_LOT_Z - row * LOT_SPACING;
+  const parcelCenterX = side * PARCEL_CENTER_X;
+  const root = new BABYLON.TransformNode(`lot-${house.tokenId}`, scene);
+  root.position = new BABYLON.Vector3(parcelCenterX, 0, z);
+  root.metadata = { house, baseY: 0 };
+  dynamicNodes.push(root);
+
+  const landSqft = traitNumber(house.land, 18000);
+  const parcelDepth = scaleFromRange(landSqft, 15000, 91000, 4.5, 5.9);
+  const parcelFrontage = scaleFromRange(landSqft, 15000, 91000, 4.45, 5.35);
   const roadEdgeLocalX = side * ROAD_HALF - parcelCenterX;
   const houseLocalX = side * 0.85;
-  const houseLocalZ = 0;
-  const houseRotation = side < 0 ? Math.PI / 2 : -Math.PI / 2;
-  const frontX = houseLocalX - side * (baseDepth / 2);
-  const drivewayCenterX = (roadEdgeLocalX + frontX) / 2;
-  const drivewayRun = Math.abs(roadEdgeLocalX - frontX);
+  const drivewayRun = Math.abs(roadEdgeLocalX - houseLocalX);
   const drivewayWidth = house.drivewayStyle?.includes("Valet") ? 1.55 : house.drivewayStyle?.includes("Oyster") ? 1.28 : 1.05;
-  const drivewayZ = houseLocalZ + side * baseWidth * 0.24;
+  const drivewayZ = side * 0.45;
 
-  const lot = new THREE.Mesh(new THREE.BoxGeometry(parcelDepth, 0.12, parcelFrontage), materials.lot);
-  lot.position.y = 0.06;
-  group.add(lot);
-
-  const lawnInset = new THREE.Mesh(new THREE.BoxGeometry(parcelDepth - 0.36, 0.035, parcelFrontage - 0.36), materials.grass);
-  lawnInset.position.y = 0.14;
-  group.add(lawnInset);
-
-  const propertyLine = new THREE.LineSegments(
-    new THREE.EdgesGeometry(new THREE.BoxGeometry(parcelDepth, 0.05, parcelFrontage)),
-    new THREE.LineBasicMaterial({ color: 0xcfffe6, transparent: true, opacity: 0.32 })
-  );
-  propertyLine.position.y = 0.18;
-  group.add(propertyLine);
-
-  [-1, 1].forEach((fenceSide) => {
-    const fence = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.34, parcelFrontage - 0.32), materials.curb);
-    fence.position.set(fenceSide * parcelDepth * 0.48, 0.28, 0);
-    group.add(fence);
+  const lot = createBox("parcel", parcelDepth, 0.12, parcelFrontage, new BABYLON.Vector3(0, 0.06, 0), materials.lot, {
+    receiveShadows: true
   });
+  lot.parent = root;
 
-  const houseModule = new THREE.Group();
-  houseModule.position.set(houseLocalX, 0, houseLocalZ);
-  houseModule.rotation.y = houseRotation;
+  const lawn = createBox("lawn", parcelDepth - 0.36, 0.04, parcelFrontage - 0.36, new BABYLON.Vector3(0, 0.15, 0), materials.grass);
+  lawn.parent = root;
 
-  const bodyMaterial = houseColor(house, slotIndex);
-  const body = new THREE.Mesh(new THREE.BoxGeometry(baseWidth, bodyHeight, baseDepth), bodyMaterial);
-  body.position.y = 0.16 + bodyHeight / 2;
-  houseModule.add(body);
-  addWindows(houseModule, baseWidth, bodyHeight, baseDepth, materials.dark, 1);
-  addRoof(houseModule, profile, baseWidth, bodyHeight, baseDepth);
-  group.add(houseModule);
-
-  const driveway = new THREE.Mesh(
-    new THREE.BoxGeometry(drivewayRun, 0.045, drivewayWidth),
-    drivewayMaterial(house.driveway)
-  );
-  driveway.position.set(drivewayCenterX, 0.165, drivewayZ);
-  group.add(driveway);
-
-  const curbCut = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.055, drivewayWidth + 0.25), materials.concrete);
-  curbCut.position.set(roadEdgeLocalX - side * 0.18, 0.18, drivewayZ);
-  group.add(curbCut);
-
-  const walkway = new THREE.Mesh(new THREE.BoxGeometry(Math.max(0.7, drivewayRun * 0.62), 0.035, 0.34), materials.sidewalk);
-  walkway.position.set((roadEdgeLocalX + frontX) / 2, 0.19, houseLocalZ - side * baseWidth * 0.24);
-  group.add(walkway);
-
-  if (house.drivewayStyle?.includes("Oyster")) {
-    for (let index = 0; index < 6; index += 1) {
-      const shell = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), materials.crushedStone);
-      shell.scale.set(1.4, 0.28, 0.9);
-      shell.position.set(drivewayCenterX + side * (index - 2.5) * 0.22, 0.22, drivewayZ + 0.46);
-      group.add(shell);
-    }
-  }
-
-  if (house.drivewayStyle?.includes("Valet")) {
-    const valetPost = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.04, 0.7, 10), materials.coral);
-    valetPost.position.set(frontX - side * 0.36, 0.5, drivewayZ + 0.72);
-    group.add(valetPost);
-  }
-
-  const mailbox = new THREE.Group();
-  const mailboxPost = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.5, 8), materials.chrome);
-  mailboxPost.position.y = 0.25;
-  const mailboxBox = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.18, 0.18), materials.aqua);
-  mailboxBox.position.y = 0.56;
-  mailbox.add(mailboxPost, mailboxBox);
-  mailbox.position.set(roadEdgeLocalX - side * 0.58, 0.08, drivewayZ - 0.72);
-  group.add(mailbox);
-
-  const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.8, 8), materials.glass);
-  antenna.position.set(0.48, bodyHeight + 1.08, -0.18);
-  houseModule.add(antenna);
-
-  const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 12), materials.volt);
-  beacon.position.copy(antenna.position);
-  beacon.position.y += 0.46;
-  houseModule.add(beacon);
-
-  group.position.set(parcelCenterX, 0, z);
-  group.userData.house = house;
-  group.userData.baseY = 0;
-
-  group.traverse((child) => {
-    if (child.isMesh) {
-      child.userData.house = house;
-      child.userData.houseGroup = group;
-      clickableMeshes.push(child);
-    }
+  const driveway = createBox("driveway", drivewayRun, 0.06, drivewayWidth, new BABYLON.Vector3((roadEdgeLocalX + houseLocalX) / 2, 0.2, drivewayZ), drivewayMaterial(house.driveway), {
+    receiveShadows: true
   });
+  driveway.parent = root;
 
-  mapRoot.add(group);
-  return group;
+  const curbCut = createBox("curbCut", 0.72, 0.07, drivewayWidth + 0.25, new BABYLON.Vector3(roadEdgeLocalX - side * 0.18, 0.21, drivewayZ), materials.concrete);
+  curbCut.parent = root;
+
+  const walk = createBox("walkway", Math.max(0.8, drivewayRun * 0.58), 0.04, 0.34, new BABYLON.Vector3((roadEdgeLocalX + houseLocalX) / 2, 0.22, -drivewayZ), materials.sidewalk);
+  walk.parent = root;
+
+  const mailbox = createBox("mailbox", 0.3, 0.18, 0.18, new BABYLON.Vector3(roadEdgeLocalX - side * 0.58, 0.62, drivewayZ - 0.72), materials.aqua);
+  mailbox.parent = root;
+  const post = createBox("mailboxPost", 0.05, 0.5, 0.05, new BABYLON.Vector3(roadEdgeLocalX - side * 0.58, 0.34, drivewayZ - 0.72), materials.curb);
+  post.parent = root;
+
+  root.metadata.placeholder = addFallbackHouse(house, slotIndex, root, side);
+  addAssetHouse(house, slotIndex, root, side, parcelDepth, parcelFrontage);
+  return root;
 }
 
 function clearHouses() {
-  for (let index = mapRoot.children.length - 1; index >= 0; index -= 1) {
-    const child = mapRoot.children[index];
-    if (child.userData.generatedHouse) mapRoot.remove(child);
+  for (const node of dynamicNodes.splice(0)) {
+    if (node.name.startsWith("lot-")) node.dispose();
   }
-  clickableMeshes.length = 0;
+  pickableMeshes.length = 0;
+  selectedNode = null;
 }
 
 async function renderBlock() {
   blockLabel.textContent = "Loading...";
   prevBlock.disabled = true;
   nextBlock.disabled = true;
-  targetStreetFocusZ = 8;
-  streetFocusZ = 8;
-  updateStreetLabel();
+  resetPlayerView(false);
   clearHouses();
+
   const visible = await Promise.all(
     houseData.slice(visibleOffset, visibleOffset + PAGE_SIZE).map(loadHouseDetails)
   );
-
-  visible.forEach((house, index) => {
-    const houseMesh = createHouseMesh(house, index);
-    houseMesh.userData.generatedHouse = true;
-  });
+  const roots = visible.map(createHouseLot);
 
   const start = PUBLIC_MINT_START + visibleOffset;
   const end = Math.min(PUBLIC_MINT_START + visibleOffset + PAGE_SIZE - 1, PUBLIC_MINT_END);
@@ -671,7 +674,7 @@ async function renderBlock() {
   prevBlock.disabled = visibleOffset === 0;
   nextBlock.disabled = visibleOffset + PAGE_SIZE >= houseData.length;
 
-  if (visible.length > 0) selectHouse(visible[0], clickableMeshes[0]?.userData.houseGroup, false);
+  if (visible.length > 0) selectHouse(visible[0], roots[0], false);
 }
 
 function setPanelImage(house) {
@@ -711,15 +714,24 @@ function updateMintButton(label, disabled, note) {
 }
 
 function updateStreetLabel() {
-  const progress = Math.round(((8 - targetStreetFocusZ) / 52) * 100);
-  streetLabel.textContent = progress >= 96 ? "Left / Right split" : `Street ${Math.min(100, Math.max(0, progress))}%`;
-  walkBack.disabled = targetStreetFocusZ >= 8;
-  walkForward.disabled = targetStreetFocusZ <= -44;
+  const distanceIntoStreet = Math.round(STREET_START_Z - camera.position.z);
+  const atSplit = camera.position.z <= INTERSECTION_CLEARANCE_Z;
+  streetLabel.textContent = atSplit ? "Left / right split" : `${Math.max(0, distanceIntoStreet)}m down street`;
+  walkForward.textContent = document.pointerLockElement === canvas ? "World Active" : "Enter World";
 }
 
-function moveStreet(delta) {
-  targetStreetFocusZ = Math.min(8, Math.max(-44, targetStreetFocusZ + delta));
+function resetPlayerView(announce = true) {
+  camera.position = new BABYLON.Vector3(0, 2.1, 27);
+  camera.setTarget(new BABYLON.Vector3(0, 1.3, -6));
   updateStreetLabel();
+  if (announce) showToast("View reset to the Metagascar entrance.");
+}
+
+function lockWorld() {
+  canvas.focus();
+  camera.attachControl(canvas, true);
+  canvas.requestPointerLock?.();
+  showToast("Babylon world controls active. Use WASD and mouse look.");
 }
 
 async function refreshMintStatus(house) {
@@ -747,10 +759,12 @@ async function refreshMintStatus(house) {
 
 function selectHouse(house, meshGroup, announce = true) {
   selectedHouse = house;
-
-  if (selectedMesh) selectedMesh.scale.setScalar(1);
-  selectedMesh = meshGroup || selectedMesh;
-  if (selectedMesh) selectedMesh.scale.setScalar(1.08);
+  if (selectedNode) {
+    selectedNode.scaling = BABYLON.Vector3.One();
+    selectedNode.position.y = selectedNode.metadata?.baseY || 0;
+  }
+  selectedNode = meshGroup || null;
+  if (selectedNode) selectedNode.scaling = new BABYLON.Vector3(1.04, 1.04, 1.04);
 
   detailPanel.classList.remove("is-hidden");
   details.status.textContent = "Checking...";
@@ -825,21 +839,26 @@ async function mintSelectedHouse() {
   }
 }
 
-function setupEvents() {
-  window.addEventListener("pointermove", (event) => {
-    mouseDrift.x = (event.clientX / window.innerWidth - 0.5) * 2;
-    mouseDrift.y = (event.clientY / window.innerHeight - 0.5) * 2;
-  });
+function pickHouse(pointerX, pointerY) {
+  const pick = scene.pick(pointerX, pointerY, (mesh) => pickableMeshes.includes(mesh));
+  const house = pick?.pickedMesh?.metadata?.house;
+  const group = pick?.pickedMesh?.metadata?.houseGroup;
+  if (house) {
+    selectHouse(house, group);
+    return true;
+  }
+  return false;
+}
 
-  canvas.addEventListener("click", (event) => {
-    const rect = canvas.getBoundingClientRect();
-    pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-    raycaster.setFromCamera(pointer, camera);
-    const hit = raycaster.intersectObjects(clickableMeshes, false)[0];
-    if (hit?.object?.userData?.house) {
-      selectHouse(hit.object.userData.house, hit.object.userData.houseGroup);
+function setupEvents() {
+  canvas.addEventListener("pointerdown", (event) => {
+    if (document.pointerLockElement === canvas) {
+      if (!pickHouse(engine.getRenderWidth() / 2, engine.getRenderHeight() / 2)) {
+        showToast("Aim at a house and click to inspect its deed.");
+      }
+      return;
     }
+    if (!pickHouse(event.offsetX, event.offsetY)) lockWorld();
   });
 
   prevBlock.addEventListener("click", async () => {
@@ -852,54 +871,59 @@ function setupEvents() {
     await renderBlock();
   });
 
-  walkForward.addEventListener("click", () => moveStreet(-8));
-  walkBack.addEventListener("click", () => moveStreet(8));
-
-  window.addEventListener("keydown", (event) => {
-    if (event.key === "ArrowUp" || event.key.toLowerCase() === "w") moveStreet(-4);
-    if (event.key === "ArrowDown" || event.key.toLowerCase() === "s") moveStreet(4);
-  });
-
-  canvas.addEventListener("wheel", (event) => {
-    event.preventDefault();
-    moveStreet(event.deltaY > 0 ? -4 : 4);
-  }, { passive: false });
-
+  walkForward.addEventListener("click", lockWorld);
+  walkBack.addEventListener("click", () => resetPlayerView());
   connectButton.addEventListener("click", connectWallet);
   mintButton.addEventListener("click", mintSelectedHouse);
   closePanel.addEventListener("click", () => detailPanel.classList.add("is-hidden"));
-
-  window.addEventListener("resize", () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+  document.addEventListener("pointerlockchange", updateStreetLabel);
+  window.addEventListener("keydown", (event) => {
+    const key = event.key.toLowerCase();
+    if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright", "shift"].includes(key)) {
+      movementKeys.add(key);
+      event.preventDefault();
+    }
   });
+  window.addEventListener("keyup", (event) => {
+    movementKeys.delete(event.key.toLowerCase());
+  });
+
+  window.addEventListener("resize", () => engine.resize());
 }
 
-function animate() {
-  const time = performance.now() * 0.001;
-  streetFocusZ += (targetStreetFocusZ - streetFocusZ) * 0.08;
-  mapRoot.rotation.y = mouseDrift.x * 0.04;
-  camera.position.x = mouseDrift.x * 1.2;
-  camera.position.y = 9.5 + mouseDrift.y * -0.35;
-  camera.position.z = streetFocusZ + 11;
-  camera.lookAt(mouseDrift.x * 0.8, 0.2, streetFocusZ - 20);
+function updatePlayerMovement() {
+  const direction = new BABYLON.Vector3(0, 0, 0);
+  const forward = camera.getForwardRay(1).direction;
+  forward.y = 0;
+  forward.normalize();
+  const right = BABYLON.Vector3.Cross(BABYLON.Axis.Y, forward).normalize();
 
-  for (const mesh of clickableMeshes) {
-    const group = mesh.userData.houseGroup;
-    if (group && group === selectedMesh) {
-      group.position.y = Math.sin(time * 3) * 0.08;
-    }
-  }
+  if (movementKeys.has("w") || movementKeys.has("arrowup")) direction.addInPlace(forward);
+  if (movementKeys.has("s") || movementKeys.has("arrowdown")) direction.subtractInPlace(forward);
+  if (movementKeys.has("d") || movementKeys.has("arrowright")) direction.addInPlace(right);
+  if (movementKeys.has("a") || movementKeys.has("arrowleft")) direction.subtractInPlace(right);
 
-  renderer.render(scene, camera);
-  requestAnimationFrame(animate);
+  if (direction.lengthSquared() === 0) return;
+
+  direction.normalize();
+  const speed = movementKeys.has("shift") ? SPRINT_SPEED : WALK_SPEED;
+  const deltaSeconds = Math.min(engine.getDeltaTime() / 1000, 0.05);
+  camera.position.addInPlace(direction.scale(speed * deltaSeconds));
+}
+
+function keepCameraInWorld() {
+  camera.position.x = clamp(camera.position.x, -16.5, 16.5);
+  camera.position.z = clamp(camera.position.z, SPLIT_Z - CROSS_STREET_WIDTH * 0.54, 28.8);
+  camera.position.y = 2.1;
+  updateStreetLabel();
 }
 
 async function boot() {
+  if (!BABYLON) throw new Error("Babylon.js did not load.");
   addGround();
-  addPortalGate();
   setupEvents();
+  assetModels = await loadAssetManifests();
+  if (assetModels.length === 0) showToast("Poly Pizza assets are missing; using fallback homes.");
 
   const defaultProvider = new ethers.JsonRpcProvider("https://ethereum-rpc.publicnode.com", 1);
   readContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, defaultProvider);
@@ -914,10 +938,15 @@ async function boot() {
   );
 
   await renderBlock();
-  animate();
+  engine.runRenderLoop(() => {
+    updatePlayerMovement();
+    keepCameraInWorld();
+    if (selectedNode) selectedNode.position.y = (selectedNode.metadata?.baseY || 0) + (Math.sin(performance.now() * 0.003) + 1) * 0.02;
+    scene.render();
+  });
 }
 
 boot().catch((error) => {
   console.error(error);
-  showToast("Could not load Metagascar map data.");
+  showToast("Could not load Metagascar Babylon city.");
 });

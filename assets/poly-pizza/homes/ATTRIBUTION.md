@@ -1,0 +1,64 @@
+# Poly Pizza House Model Attribution
+
+Models downloaded from https://poly.pizza. Keep this file with the downloaded assets.
+
+- Farm house (bHyQe5jzdiQ)
+  - Licence: CC-BY 3.0
+  - Creator: Poly by Google
+  - Source: https://poly.pizza/m/bHyQe5jzdiQ
+  - Attribution: "Farm house" by Poly by Google, https://poly.pizza/m/bHyQe5jzdiQ. Licence at https://creativecommons.org/licenses/by/3.0
+- House (75V_MLvKMqM)
+  - Licence: CC-BY 3.0
+  - Creator: Poly by Google
+  - Source: https://poly.pizza/m/75V_MLvKMqM
+  - Attribution: "House" by Poly by Google, https://poly.pizza/m/75V_MLvKMqM. Licence at https://creativecommons.org/licenses/by/3.0
+- Home Blocks Home (bvLXsDt9mww)
+  - Licence: CC-BY 3.0
+  - Creator: Julien Kleber (Juliusprod)
+  - Source: https://poly.pizza/m/bvLXsDt9mww
+  - Attribution: "Home Blocks Home" by Julien Kleber (Juliusprod), https://poly.pizza/m/bvLXsDt9mww. Licence at https://creativecommons.org/licenses/by/3.0
+- Apartment 2 (dtgO5dwwtkk)
+  - Licence: CC-BY 3.0
+  - Creator: Gabriele Romagnoli
+  - Source: https://poly.pizza/m/dtgO5dwwtkk
+  - Attribution: "Apartment 2" by Gabriele Romagnoli, https://poly.pizza/m/dtgO5dwwtkk. Licence at https://creativecommons.org/licenses/by/3.0
+- Chilled Cow Apt (4NNkEGLAdOb)
+  - Licence: CC-BY 3.0
+  - Creator: Julien Kleber (Juliusprod)
+  - Source: https://poly.pizza/m/4NNkEGLAdOb
+  - Attribution: "Chilled Cow Apt" by Julien Kleber (Juliusprod), https://poly.pizza/m/4NNkEGLAdOb. Licence at https://creativecommons.org/licenses/by/3.0
+- Log cabin (f7uccD5iyz0)
+  - Licence: CC-BY 3.0
+  - Creator: Poly by Google
+  - Source: https://poly.pizza/m/f7uccD5iyz0
+  - Attribution: "Log cabin" by Poly by Google, https://poly.pizza/m/f7uccD5iyz0. Licence at https://creativecommons.org/licenses/by/3.0
+- Brit's House (2K3bGB-w2qa)
+  - Licence: CC-BY 3.0
+  - Creator: Anonymous
+  - Source: https://poly.pizza/m/2K3bGB-w2qa
+  - Attribution: "Brit's House" by Anonymous, https://poly.pizza/m/2K3bGB-w2qa. Licence at https://creativecommons.org/licenses/by/3.0
+- House (6PGyqELX8M-)
+  - Licence: CC-BY 3.0
+  - Creator: Poly by Google
+  - Source: https://poly.pizza/m/6PGyqELX8M-
+  - Attribution: "House" by Poly by Google, https://poly.pizza/m/6PGyqELX8M-. Licence at https://creativecommons.org/licenses/by/3.0
+- Small House (053kskrV4U_)
+  - Licence: CC-BY 3.0
+  - Creator: Jarlan Perez
+  - Source: https://poly.pizza/m/053kskrV4U_
+  - Attribution: "Small House" by Jarlan Perez, https://poly.pizza/m/053kskrV4U_. Licence at https://creativecommons.org/licenses/by/3.0
+- House with driveway (bnZkUs4qEdG)
+  - Licence: CC-BY 3.0
+  - Creator: Poly by Google
+  - Source: https://poly.pizza/m/bnZkUs4qEdG
+  - Attribution: "House with driveway" by Poly by Google, https://poly.pizza/m/bnZkUs4qEdG. Licence at https://creativecommons.org/licenses/by/3.0
+- Cabin (dTSrDa0oz0a)
+  - Licence: CC-BY 3.0
+  - Creator: Poly by Google
+  - Source: https://poly.pizza/m/dTSrDa0oz0a
+  - Attribution: "Cabin" by Poly by Google, https://poly.pizza/m/dTSrDa0oz0a. Licence at https://creativecommons.org/licenses/by/3.0
+- House (diphAid-jq6)
+  - Licence: CC-BY 3.0
+  - Creator: Peter Le Bek
+  - Source: https://poly.pizza/m/diphAid-jq6
+  - Attribution: "House" by Peter Le Bek, https://poly.pizza/m/diphAid-jq6. Licence at https://creativecommons.org/licenses/by/3.0

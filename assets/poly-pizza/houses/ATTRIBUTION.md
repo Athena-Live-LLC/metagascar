@@ -1,0 +1,64 @@
+# Poly Pizza House Model Attribution
+
+Models downloaded from https://poly.pizza. Keep this file with the downloaded assets.
+
+- Farm house (bHyQe5jzdiQ)
+  - Licence: CC-BY 3.0
+  - Creator: Poly by Google
+  - Source: https://poly.pizza/m/bHyQe5jzdiQ
+  - Attribution: "Farm house" by Poly by Google, https://poly.pizza/m/bHyQe5jzdiQ. Licence at https://creativecommons.org/licenses/by/3.0
+- House (75V_MLvKMqM)
+  - Licence: CC-BY 3.0
+  - Creator: Poly by Google
+  - Source: https://poly.pizza/m/75V_MLvKMqM
+  - Attribution: "House" by Poly by Google, https://poly.pizza/m/75V_MLvKMqM. Licence at https://creativecommons.org/licenses/by/3.0
+- House (6PGyqELX8M-)
+  - Licence: CC-BY 3.0
+  - Creator: Poly by Google
+  - Source: https://poly.pizza/m/6PGyqELX8M-
+  - Attribution: "House" by Poly by Google, https://poly.pizza/m/6PGyqELX8M-. Licence at https://creativecommons.org/licenses/by/3.0
+- Fantasy House (BH2XHWUNmF)
+  - Licence: CC0 1.0
+  - Creator: Quaternius
+  - Source: https://poly.pizza/m/BH2XHWUNmF
+  - Attribution: "Fantasy House" by Quaternius, https://poly.pizza/m/BH2XHWUNmF. Licence at https://creativecommons.org/publicdomain/zero/1.0/
+- House with driveway (bnZkUs4qEdG)
+  - Licence: CC-BY 3.0
+  - Creator: Poly by Google
+  - Source: https://poly.pizza/m/bnZkUs4qEdG
+  - Attribution: "House with driveway" by Poly by Google, https://poly.pizza/m/bnZkUs4qEdG. Licence at https://creativecommons.org/licenses/by/3.0
+- House (roqiHdrpgc)
+  - Licence: CC0 1.0
+  - Creator: Quaternius
+  - Source: https://poly.pizza/m/roqiHdrpgc
+  - Attribution: "House" by Quaternius, https://poly.pizza/m/roqiHdrpgc. Licence at https://creativecommons.org/publicdomain/zero/1.0/
+- Apartment building (01lqee-dZAr)
+  - Licence: CC-BY 3.0
+  - Creator: Poly by Google
+  - Source: https://poly.pizza/m/01lqee-dZAr
+  - Attribution: "Apartment building" by Poly by Google, https://poly.pizza/m/01lqee-dZAr. Licence at https://creativecommons.org/licenses/by/3.0
+- Apartment 2 (dtgO5dwwtkk)
+  - Licence: CC-BY 3.0
+  - Creator: Gabriele Romagnoli
+  - Source: https://poly.pizza/m/dtgO5dwwtkk
+  - Attribution: "Apartment 2" by Gabriele Romagnoli, https://poly.pizza/m/dtgO5dwwtkk. Licence at https://creativecommons.org/licenses/by/3.0
+- Log cabin (f7uccD5iyz0)
+  - Licence: CC-BY 3.0
+  - Creator: Poly by Google
+  - Source: https://poly.pizza/m/f7uccD5iyz0
+  - Attribution: "Log cabin" by Poly by Google, https://poly.pizza/m/f7uccD5iyz0. Licence at https://creativecommons.org/licenses/by/3.0
+- Cottage (YDGLLT0emC)
+  - Licence: CC0 1.0
+  - Creator: CreativeTrio
+  - Source: https://poly.pizza/m/YDGLLT0emC
+  - Attribution: "Cottage" by CreativeTrio, https://poly.pizza/m/YDGLLT0emC. Licence at https://creativecommons.org/publicdomain/zero/1.0/
+- Deaver's House (7O3e5ZO7ec_)
+  - Licence: CC-BY 3.0
+  - Creator: Nick Slough
+  - Source: https://poly.pizza/m/7O3e5ZO7ec_
+  - Attribution: "Deaver's House" by Nick Slough, https://poly.pizza/m/7O3e5ZO7ec_. Licence at https://creativecommons.org/licenses/by/3.0
+- Town House (imVkxz7oZD)
+  - Licence: CC0 1.0
+  - Creator: Quaternius
+  - Source: https://poly.pizza/m/imVkxz7oZD
+  - Attribution: "Town House" by Quaternius, https://poly.pizza/m/imVkxz7oZD. Licence at https://creativecommons.org/publicdomain/zero/1.0/
