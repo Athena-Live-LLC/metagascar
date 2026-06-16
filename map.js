@@ -85,15 +85,14 @@ const MAP_SURFACE_ZONES = {
   planting: { label: "planting yard", offset: ROAD_HALF + SIDEWALK_WIDTH + 3.1, halfWidth: 0.85 }
 };
 const CITY_PROP_ZONES = {
-  cars: "parking",
   lights: "furniture",
   "traffic-lights": "curb",
   signs: "furniture",
   benches: "furniture",
-  trees: "planting",
   trash: "furniture",
   hydrants: "curb"
 };
+const DISABLED_CITY_ASSET_GROUPS = new Set(["cars", "trees", "streets"]);
 
 window.METAGASCAR_MAP_ZONES = MAP_SURFACE_ZONES;
 
@@ -661,13 +660,6 @@ function addCar(side, z, material, roadCenterX = 0, options = {}) {
       wheel.parent = root;
     }
   }
-  if (options.streamAssets) {
-    queueCityPropInZone("cars", roadCenterX, side, z, {
-      expectedVersion: options.expectedVersion,
-      rotationY: root.rotation.y,
-      seed: options.seed
-    });
-  }
 }
 
 function addGroundWindow(centerStreetIndex, expectedVersion = cityWindowVersion) {
@@ -742,12 +734,6 @@ function addGroundWindow(centerStreetIndex, expectedVersion = cityWindowVersion)
         top.position = new BABYLON.Vector3(treeX, 1.12, z + 2.3);
         top.material = materials.volt;
         trackPageNode(top);
-        if (streamAssets) {
-          queueCityPropInZone("trees", roadCenterX, side, z + 2.3, {
-            expectedVersion,
-            seed: streetIndex * 19 + row + (side > 0 ? 3 : 0)
-          });
-        }
         if (streamAssets && row % 4 === 0) {
           queueCityPropInZone("benches", roadCenterX, side, z - 0.35, {
             expectedVersion,
@@ -811,6 +797,7 @@ async function loadCityAssetManifest() {
 
     for (const asset of manifest) {
       if (!asset?.localModel || !asset.group) continue;
+      if (DISABLED_CITY_ASSET_GROUPS.has(asset.group)) continue;
       if (!byGroup.has(asset.group)) byGroup.set(asset.group, []);
       byGroup.get(asset.group).push(asset);
     }
