@@ -60,10 +60,42 @@ const MAX_REASONABLE_MODEL_SCALE = 28.0;
 const MAX_VERTICAL_STRETCH = 2.4;
 const MAX_FINAL_HOUSE_HEIGHT = 5.1;
 const CALIBRATION_URL = "assets/poly-pizza/model-calibration.json";
+const CITY_ASSET_MANIFEST_URL = "assets/poly-pizza/city/manifest.json";
 const ASSET_MANIFESTS = [
   "assets/poly-pizza/houses/manifest.json",
   "assets/poly-pizza/homes/manifest.json"
 ];
+const CITY_PROP_TARGETS = {
+  cars: { height: 0.62, maxWidth: 1.25, maxDepth: 2.0 },
+  lights: { height: 2.35, maxWidth: 0.72, maxDepth: 0.72 },
+  "traffic-lights": { height: 2.45, maxWidth: 0.9, maxDepth: 0.9 },
+  signs: { height: 1.2, maxWidth: 1.15, maxDepth: 0.75 },
+  benches: { height: 0.52, maxWidth: 1.45, maxDepth: 0.72 },
+  trees: { height: 1.9, maxWidth: 0.9, maxDepth: 0.9 },
+  trash: { height: 0.58, maxWidth: 0.55, maxDepth: 0.55 },
+  hydrants: { height: 0.58, maxWidth: 0.5, maxDepth: 0.5 },
+  streets: { height: 0.04, maxWidth: 6.8, maxDepth: 6.8 }
+};
+const MAP_SURFACE_ZONES = {
+  road: { label: "road", offset: 0, halfWidth: ROAD_HALF },
+  parking: { label: "curbside parking", offset: ROAD_HALF + 0.55, halfWidth: 0.42 },
+  curb: { label: "curb", offset: ROAD_HALF + 0.24, halfWidth: 0.18 },
+  sidewalk: { label: "sidewalk", offset: ROAD_HALF + SIDEWALK_WIDTH / 2 + 0.28, halfWidth: SIDEWALK_WIDTH / 2 },
+  furniture: { label: "sidewalk furniture strip", offset: ROAD_HALF + SIDEWALK_WIDTH + 0.3, halfWidth: 0.42 },
+  planting: { label: "planting yard", offset: ROAD_HALF + SIDEWALK_WIDTH + 3.1, halfWidth: 0.85 }
+};
+const CITY_PROP_ZONES = {
+  cars: "parking",
+  lights: "furniture",
+  "traffic-lights": "curb",
+  signs: "furniture",
+  benches: "furniture",
+  trees: "planting",
+  trash: "furniture",
+  hydrants: "curb"
+};
+
+window.METAGASCAR_MAP_ZONES = MAP_SURFACE_ZONES;
 
 const canvas = document.querySelector("#map-scene");
 const connectButton = document.querySelector("#connect-wallet");
@@ -95,6 +127,7 @@ let houseData = [];
 let streetRows = [];
 let streetNames = [];
 let assetModels = [];
+let cityAssetsByGroup = new Map();
 let modelCalibration = null;
 let visibleOffset = 0;
 let currentStreetIndex = 0;
@@ -489,23 +522,133 @@ function drivewayMaterial(driveway) {
   return materials.gravel;
 }
 
-function addStreetFurniture(side, z, roadCenterX = 0) {
-  const x = roadCenterX + side * (ROAD_HALF + SIDEWALK_WIDTH + 0.15);
+function selectCityAsset(group, seed = 0) {
+  const assets = cityAssetsByGroup.get(group) || [];
+  if (assets.length === 0) return null;
+  return assets[Math.abs(seed) % assets.length];
+}
+
+function zonePosition(roadCenterX, side, zoneName, z, y = 0.08) {
+  const zone = MAP_SURFACE_ZONES[zoneName] || MAP_SURFACE_ZONES.furniture;
+  return new BABYLON.Vector3(roadCenterX + side * zone.offset, y, z);
+}
+
+function queueCityPropInZone(group, roadCenterX, side, z, options = {}) {
+  const zone = options.zone || CITY_PROP_ZONES[group] || "furniture";
+  return queueCityProp(group, zonePosition(roadCenterX, side, zone, z, options.y ?? 0.08), {
+    ...options,
+    zone
+  });
+}
+
+function queueCityProp(group, position, options = {}) {
+  const asset = selectCityAsset(group, options.seed || 0);
+  if (!asset) return null;
+
+  const root = new BABYLON.TransformNode(`cityProp-${group}-${asset.id}`, scene);
+  root.position = position.clone();
+  root.rotation.y = options.rotationY || 0;
+  root.metadata = { asset, cityProp: true, zone: options.zone || null };
+  trackPageNode(root);
+
+  prefetchAssetModel(asset);
+  assetImportQueue.push(() => addCityPropAsset(asset, root, group, options.expectedVersion || cityWindowVersion));
+  runNextAssetImport();
+  return root;
+}
+
+async function addCityPropAsset(asset, root, group, expectedVersion) {
+  if (expectedVersion !== cityWindowVersion || root.isDisposed?.()) return;
+  const target = CITY_PROP_TARGETS[group] || { height: 1, maxWidth: 1, maxDepth: 1 };
+  const { rootUrl, filename } = assetPathParts(asset);
+
+  try {
+    await prefetchAssetModel(asset);
+    if (expectedVersion !== cityWindowVersion || root.isDisposed?.()) return;
+    while (movementKeys.size > 0) await delay(ASSET_IMPORT_MOVE_PAUSE_MS);
+    await idleFrame();
+    await nextFrame();
+    if (expectedVersion !== cityWindowVersion || root.isDisposed?.()) return;
+
+    const result = await BABYLON.SceneLoader.ImportMeshAsync("", rootUrl, filename, scene);
+    const importedNodes = [...result.meshes, ...result.transformNodes];
+    const meshes = result.meshes.filter((mesh) => mesh instanceof BABYLON.Mesh && mesh.getTotalVertices() > 0);
+
+    if (expectedVersion !== cityWindowVersion || root.isDisposed?.()) {
+      for (const node of importedNodes) node.dispose?.();
+      return;
+    }
+
+    const anchorWorld = root.getAbsolutePosition().clone();
+    const modelRoot = new BABYLON.TransformNode(`cityPropContent-${asset.id}`, scene);
+    modelRoot.parent = root;
+
+    for (const node of importedNodes) {
+      if (!node.parent || !importedNodes.includes(node.parent)) node.parent = modelRoot;
+    }
+
+    const bounds = meshBounds(meshes);
+    if (bounds) {
+      modelRoot.position = new BABYLON.Vector3(-bounds.center.x, -bounds.min.y, -bounds.center.z);
+      const heightScale = target.height / Math.max(bounds.size.y, 0.01);
+      const widthScale = target.maxWidth / Math.max(bounds.size.x, 0.01);
+      const depthScale = target.maxDepth / Math.max(bounds.size.z, 0.01);
+      const scale = clamp(Math.min(heightScale, widthScale, depthScale), 0.01, 12);
+      modelRoot.scaling = new BABYLON.Vector3(scale, scale, scale);
+      modelRoot.computeWorldMatrix(true);
+      for (const mesh of meshes) mesh.computeWorldMatrix(true);
+
+      const scaledBounds = meshBounds(meshes);
+      if (scaledBounds) {
+        root.position.addInPlace(new BABYLON.Vector3(
+          anchorWorld.x - scaledBounds.center.x,
+          anchorWorld.y - scaledBounds.min.y,
+          anchorWorld.z - scaledBounds.center.z
+        ));
+      }
+    }
+
+    for (const mesh of meshes) {
+      mesh.isPickable = false;
+      mesh.checkCollisions = false;
+      mesh.metadata = { asset, cityProp: true };
+    }
+  } catch (error) {
+    console.warn(`Could not load city asset ${asset.localModel}: ${error.message}`);
+  }
+}
+
+function addStreetFurniture(side, z, roadCenterX = 0, options = {}) {
+  const x = zonePosition(roadCenterX, side, "furniture", z).x;
   trackPageNode(createBox("lampPost", 0.08, 2.2, 0.08, new BABYLON.Vector3(x, 1.1, z), materials.dark));
   const lamp = BABYLON.MeshBuilder.CreateSphere("lampGlow", { diameter: 0.34, segments: 12 }, scene);
   lamp.position = new BABYLON.Vector3(x, 2.32, z);
   lamp.material = materials.volt;
   trackPageNode(lamp);
+  if (options.streamAssets) {
+    queueCityPropInZone("lights", roadCenterX, side, z, {
+      expectedVersion: options.expectedVersion,
+      rotationY: side < 0 ? Math.PI / 2 : -Math.PI / 2,
+      seed: options.seed
+    });
+  }
 
-  const signX = roadCenterX + side * (ROAD_HALF + SIDEWALK_WIDTH + 0.72);
+  const signX = zonePosition(roadCenterX, side, "furniture", z + 1.8).x;
   trackPageNode(createBox("streetSignPost", 0.06, 1.05, 0.06, new BABYLON.Vector3(signX, 0.55, z + 1.8), materials.curb));
   trackPageNode(createBox("streetSignPanel", 0.7, 0.28, 0.06, new BABYLON.Vector3(signX, 1.12, z + 1.8), materials.aqua));
+  if (options.streamAssets) {
+    queueCityPropInZone("signs", roadCenterX, side, z + 1.8, {
+      expectedVersion: options.expectedVersion,
+      rotationY: side < 0 ? Math.PI / 2 : -Math.PI / 2,
+      seed: (options.seed || 0) + 3
+    });
+  }
 }
 
-function addCar(side, z, material, roadCenterX = 0) {
+function addCar(side, z, material, roadCenterX = 0, options = {}) {
   const root = new BABYLON.TransformNode("parkedCar", scene);
   trackPageNode(root);
-  root.position = new BABYLON.Vector3(roadCenterX + side * (ROAD_HALF - 0.75), 0.04, z);
+  root.position = zonePosition(roadCenterX, side, "parking", z, 0.04);
   root.rotation.y = side < 0 ? Math.PI : 0;
   createBox("carBody", 0.95, 0.32, 1.65, new BABYLON.Vector3(0, 0.28, 0), material).parent = root;
   createBox("carCabin", 0.62, 0.26, 0.72, new BABYLON.Vector3(0, 0.58, -0.05), materials.glass).parent = root;
@@ -518,9 +661,16 @@ function addCar(side, z, material, roadCenterX = 0) {
       wheel.parent = root;
     }
   }
+  if (options.streamAssets) {
+    queueCityPropInZone("cars", roadCenterX, side, z, {
+      expectedVersion: options.expectedVersion,
+      rotationY: root.rotation.y,
+      seed: options.seed
+    });
+  }
 }
 
-function addGroundWindow(centerStreetIndex) {
+function addGroundWindow(centerStreetIndex, expectedVersion = cityWindowVersion) {
   const startStreet = Math.max(0, centerStreetIndex - STREET_VIEW_RADIUS);
   const endStreet = Math.min(maxStreetIndex(), centerStreetIndex + STREET_VIEW_RADIUS);
   const startX = worldXForStreet(startStreet);
@@ -537,6 +687,7 @@ function addGroundWindow(centerStreetIndex) {
 
   for (let streetIndex = startStreet; streetIndex <= endStreet; streetIndex += 1) {
     const roadCenterX = worldXForStreet(streetIndex);
+    const streamAssets = streetIndex === centerStreetIndex;
     trackPageNode(createPlaneBox("road", ROAD_WIDTH, 88, 0.02, -18, materials.road, roadCenterX));
     trackPageNode(createPlaneBox("stopBar", ROAD_WIDTH - 0.8, 0.16, 0.07, SPLIT_Z + CROSS_STREET_WIDTH * 0.52, materials.roadLine, roadCenterX));
 
@@ -559,16 +710,55 @@ function addGroundWindow(centerStreetIndex) {
 
     const carMaterials = [materials.aqua, materials.coral, materials.orchid, materials.curb];
     for (const side of [-1, 1]) {
-      [10.8, -18.8].forEach((z, index) => addCar(side, z, carMaterials[(index + streetIndex + (side > 0 ? 1 : 0)) % carMaterials.length], roadCenterX));
+      [10.8, -18.8].forEach((z, index) => addCar(side, z, carMaterials[(index + streetIndex + (side > 0 ? 1 : 0)) % carMaterials.length], roadCenterX, {
+        expectedVersion,
+        streamAssets,
+        seed: streetIndex * 11 + index + (side > 0 ? 5 : 0)
+      }));
+
+      if (streamAssets) {
+        queueCityPropInZone("traffic-lights", roadCenterX, side, INTERSECTION_CLEARANCE_Z + 1.8, {
+          expectedVersion,
+          rotationY: side < 0 ? Math.PI / 2 : -Math.PI / 2,
+          seed: streetIndex * 7 + (side > 0 ? 2 : 0)
+        });
+        queueCityPropInZone("hydrants", roadCenterX, side, 8.4, {
+          expectedVersion,
+          rotationY: side < 0 ? Math.PI / 2 : -Math.PI / 2,
+          seed: streetIndex * 13 + (side > 0 ? 1 : 0)
+        });
+      }
+
       for (let row = 0; row < STREET_DECOR_ROWS; row += 2) {
         const z = FIRST_LOT_Z - row * STREET_DECOR_SPACING;
-        addStreetFurniture(side, z - 2.35, roadCenterX);
-        const treeX = roadCenterX + side * (ROAD_HALF + SIDEWALK_WIDTH + 0.86);
+        addStreetFurniture(side, z - 2.35, roadCenterX, {
+          expectedVersion,
+          streamAssets,
+          seed: streetIndex * 17 + row + (side > 0 ? 4 : 0)
+        });
+        const treeX = zonePosition(roadCenterX, side, "planting", z + 2.3).x;
         trackPageNode(createBox("treeTrunk", 0.14, 0.9, 0.14, new BABYLON.Vector3(treeX, 0.48, z + 2.3), materials.brick));
         const top = BABYLON.MeshBuilder.CreateSphere("treeTop", { diameter: 0.7, segments: 12 }, scene);
         top.position = new BABYLON.Vector3(treeX, 1.12, z + 2.3);
         top.material = materials.volt;
         trackPageNode(top);
+        if (streamAssets) {
+          queueCityPropInZone("trees", roadCenterX, side, z + 2.3, {
+            expectedVersion,
+            seed: streetIndex * 19 + row + (side > 0 ? 3 : 0)
+          });
+        }
+        if (streamAssets && row % 4 === 0) {
+          queueCityPropInZone("benches", roadCenterX, side, z - 0.35, {
+            expectedVersion,
+            rotationY: side < 0 ? Math.PI / 2 : -Math.PI / 2,
+            seed: streetIndex * 23 + row + (side > 0 ? 8 : 0)
+          });
+          queueCityPropInZone("trash", roadCenterX, side, z - 0.95, {
+            expectedVersion,
+            seed: streetIndex * 29 + row + (side > 0 ? 6 : 0)
+          });
+        }
       }
     }
   }
@@ -610,6 +800,26 @@ async function loadAssetManifests() {
       return model ? { ...model, calibration: settings } : null;
     })
     .filter((model) => model && (model.bytes?.model || 0) <= MAX_MODEL_BYTES);
+}
+
+async function loadCityAssetManifest() {
+  try {
+    const response = await fetch(CITY_ASSET_MANIFEST_URL);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const manifest = await response.json();
+    const byGroup = new Map();
+
+    for (const asset of manifest) {
+      if (!asset?.localModel || !asset.group) continue;
+      if (!byGroup.has(asset.group)) byGroup.set(asset.group, []);
+      byGroup.get(asset.group).push(asset);
+    }
+
+    return byGroup;
+  } catch (error) {
+    console.warn(`Could not load ${CITY_ASSET_MANIFEST_URL}: ${error.message}`);
+    return new Map();
+  }
 }
 
 function meshBounds(meshes) {
@@ -1288,11 +1498,13 @@ async function boot() {
   setupEvents();
   startRenderLoop();
 
-  const [loadedAssetModels, loadedStreetRows] = await Promise.all([
+  const [loadedAssetModels, loadedCityAssets, loadedStreetRows] = await Promise.all([
     loadAssetManifests(),
+    loadCityAssetManifest(),
     loadStreetRows()
   ]);
   assetModels = loadedAssetModels;
+  cityAssetsByGroup = loadedCityAssets;
   if (assetModels.length === 0) showToast("Poly Pizza assets are missing; using fallback homes.");
   streetRows = loadedStreetRows;
   houseData = streetRows.slice(0, NFT_END - NFT_START + 1);

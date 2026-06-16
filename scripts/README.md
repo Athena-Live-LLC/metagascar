@@ -135,3 +135,36 @@ assets/poly-pizza/model-calibration.json
 The map uses that file to normalize every imported house against a 1.0-unit
 door height, standard story heights, and a target house footprint before adding
 the smaller on-chain `Home Size` variation.
+
+## Download Poly Pizza City Assets
+
+Download lightweight city props such as cars, street lights, traffic lights,
+road signs, benches, trees, trash cans, hydrants, and street pieces:
+
+```sh
+npm run download:poly-city
+```
+
+Outputs are written to:
+
+```txt
+assets/poly-pizza/city/
+```
+
+The downloader searches multiple city-related terms in parallel, skips models
+larger than `1.5MB` by default, and writes:
+
+- `models/*.glb`
+- `thumbnails/*`
+- `manifest.json`
+- `ATTRIBUTION.md`
+
+Useful options:
+
+```sh
+# Preview selected matches without downloading files
+npm run download:poly-city -- --dry-run
+
+# Allow larger city assets
+npm run download:poly-city -- --max-model-bytes 2500000
+```

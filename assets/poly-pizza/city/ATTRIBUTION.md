@@ -1,0 +1,178 @@
+# Poly Pizza City Asset Attribution
+
+Models downloaded from https://poly.pizza. Keep this file with the downloaded assets.
+
+- Car (75h3mi6uHuC)
+  - Group: cars
+  - Licence: CC-BY 3.0
+  - Creator: Poly by Google
+  - Source: undefined
+  - Attribution: "Car" by Poly by Google, https://poly.pizza/m/75h3mi6uHuC. Licence at https://creativecommons.org/licenses/by/3.0
+- Red Car (dVLJ5CjB0h)
+  - Group: cars
+  - Licence: CC-BY 3.0
+  - Creator: J-Toastie
+  - Source: undefined
+  - Attribution: "Red Car" by J-Toastie, https://poly.pizza/m/dVLJ5CjB0h. Licence at https://creativecommons.org/licenses/by/3.0
+- Mazda RX-7 (SnIoWlh7S2)
+  - Group: cars
+  - Licence: CC-BY 3.0
+  - Creator: IvOfficial
+  - Source: undefined
+  - Attribution: "Mazda RX-7" by IvOfficial, https://poly.pizza/m/SnIoWlh7S2. Licence at https://creativecommons.org/licenses/by/3.0
+- Police Car (BwwnUrWGmV)
+  - Group: cars
+  - Licence: CC0 1.0
+  - Creator: Quaternius
+  - Source: undefined
+  - Attribution: "Police Car" by Quaternius, https://poly.pizza/m/BwwnUrWGmV. Licence at https://creativecommons.org/publicdomain/zero/1.0/
+- Street Light (nFwrlcLvM5)
+  - Group: lights
+  - Licence: CC0 1.0
+  - Creator: Quaternius
+  - Source: undefined
+  - Attribution: "Street Light" by Quaternius, https://poly.pizza/m/nFwrlcLvM5. Licence at https://creativecommons.org/publicdomain/zero/1.0/
+- Lamp post (ez9fM9NvtRB)
+  - Group: lights
+  - Licence: CC-BY 3.0
+  - Creator: Poly by Google
+  - Source: undefined
+  - Attribution: "Lamp post" by Poly by Google, https://poly.pizza/m/ez9fM9NvtRB. Licence at https://creativecommons.org/licenses/by/3.0
+- Streetlight (vPFSLYh6sg)
+  - Group: lights
+  - Licence: CC0 1.0
+  - Creator: Kay Lousberg
+  - Source: undefined
+  - Attribution: "Streetlight" by Kay Lousberg, https://poly.pizza/m/vPFSLYh6sg. Licence at https://creativecommons.org/publicdomain/zero/1.0/
+- Street Objects - Lamp Post (awUS2qoxeSa)
+  - Group: lights
+  - Licence: CC-BY 3.0
+  - Creator: Ev Amitay
+  - Source: undefined
+  - Attribution: "Street Objects - Lamp Post" by Ev Amitay, https://poly.pizza/m/awUS2qoxeSa. Licence at https://creativecommons.org/licenses/by/3.0
+- Three way traffic light (ayAwgj82oUR)
+  - Group: traffic-lights
+  - Licence: CC-BY 3.0
+  - Creator: Poly by Google
+  - Source: undefined
+  - Attribution: "Three way traffic light" by Poly by Google, https://poly.pizza/m/ayAwgj82oUR. Licence at https://creativecommons.org/licenses/by/3.0
+- Traffic light (57rxXzowK8w)
+  - Group: traffic-lights
+  - Licence: CC-BY 3.0
+  - Creator: Poly by Google
+  - Source: undefined
+  - Attribution: "Traffic light" by Poly by Google, https://poly.pizza/m/57rxXzowK8w. Licence at https://creativecommons.org/licenses/by/3.0
+- Traffic Light (5eb8E34txWa)
+  - Group: traffic-lights
+  - Licence: CC-BY 3.0
+  - Creator: Jarlan Perez
+  - Source: undefined
+  - Attribution: "Traffic Light" by Jarlan Perez, https://poly.pizza/m/5eb8E34txWa. Licence at https://creativecommons.org/licenses/by/3.0
+- Stop sign (60GyU9CdZ9r)
+  - Group: signs
+  - Licence: CC-BY 3.0
+  - Creator: Poly by Google
+  - Source: undefined
+  - Attribution: "Stop sign" by Poly by Google, https://poly.pizza/m/60GyU9CdZ9r. Licence at https://creativecommons.org/licenses/by/3.0
+- Town Sign (VSZubp0ru3)
+  - Group: signs
+  - Licence: CC0 1.0
+  - Creator: Quaternius
+  - Source: undefined
+  - Attribution: "Town Sign" by Quaternius, https://poly.pizza/m/VSZubp0ru3. Licence at https://creativecommons.org/publicdomain/zero/1.0/
+- Wooden Sign (ir1ipUXgGE)
+  - Group: signs
+  - Licence: CC0 1.0
+  - Creator: iPoly3D
+  - Source: undefined
+  - Attribution: "Wooden Sign" by iPoly3D, https://poly.pizza/m/ir1ipUXgGE. Licence at https://creativecommons.org/publicdomain/zero/1.0/
+- Traffic Cone (eFQ60hneKwL)
+  - Group: signs
+  - Licence: CC-BY 3.0
+  - Creator: Adam Marc Williams
+  - Source: undefined
+  - Attribution: "Traffic Cone" by Adam Marc Williams, https://poly.pizza/m/eFQ60hneKwL. Licence at https://creativecommons.org/licenses/by/3.0
+- Bench (dOSjmdmKaxi)
+  - Group: benches
+  - Licence: CC-BY 3.0
+  - Creator: Ev Amitay
+  - Source: undefined
+  - Attribution: "Bench" by Ev Amitay, https://poly.pizza/m/dOSjmdmKaxi. Licence at https://creativecommons.org/licenses/by/3.0
+- Bench (2EvQDFgG1H3)
+  - Group: benches
+  - Licence: CC-BY 3.0
+  - Creator: Poly by Google
+  - Source: undefined
+  - Attribution: "Bench" by Poly by Google, https://poly.pizza/m/2EvQDFgG1H3. Licence at https://creativecommons.org/licenses/by/3.0
+- Bench (5c0XBtFI9C2)
+  - Group: benches
+  - Licence: CC-BY 3.0
+  - Creator: CMHT Oculus
+  - Source: undefined
+  - Attribution: "Bench" by CMHT Oculus, https://poly.pizza/m/5c0XBtFI9C2. Licence at https://creativecommons.org/licenses/by/3.0
+- Tree (6Yjt8nIwLsD)
+  - Group: trees
+  - Licence: CC-BY 3.0
+  - Creator: Marc Solà
+  - Source: undefined
+  - Attribution: "Tree" by Marc Solà, https://poly.pizza/m/6Yjt8nIwLsD. Licence at https://creativecommons.org/licenses/by/3.0
+- Pine Trees (oYtDty0fR6)
+  - Group: trees
+  - Licence: CC0 1.0
+  - Creator: Quaternius
+  - Source: undefined
+  - Attribution: "Pine Trees" by Quaternius, https://poly.pizza/m/oYtDty0fR6. Licence at https://creativecommons.org/publicdomain/zero/1.0/
+- Tree (MSuchZNT2G)
+  - Group: trees
+  - Licence: CC-BY 3.0
+  - Creator: ParfaitUwU
+  - Source: undefined
+  - Attribution: "Tree" by ParfaitUwU, https://poly.pizza/m/MSuchZNT2G. Licence at https://creativecommons.org/licenses/by/3.0
+- Tree-2 (cRipmFHCEVU)
+  - Group: trees
+  - Licence: CC-BY 3.0
+  - Creator: Marc Solà
+  - Source: undefined
+  - Attribution: "Tree-2" by Marc Solà, https://poly.pizza/m/cRipmFHCEVU. Licence at https://creativecommons.org/licenses/by/3.0
+- Trashcan Small (i7HDuYDLkx)
+  - Group: trash
+  - Licence: CC0 1.0
+  - Creator: Quaternius
+  - Source: undefined
+  - Attribution: "Trashcan Small" by Quaternius, https://poly.pizza/m/i7HDuYDLkx. Licence at https://creativecommons.org/publicdomain/zero/1.0/
+- Trash Can (3n-T6f35rdm)
+  - Group: trash
+  - Licence: CC-BY 3.0
+  - Creator: Zoe XR
+  - Source: undefined
+  - Attribution: "Trash Can" by Zoe XR, https://poly.pizza/m/3n-T6f35rdm. Licence at https://creativecommons.org/licenses/by/3.0
+- Fire hydrant (eNPaSEPrst8)
+  - Group: hydrants
+  - Licence: CC-BY 3.0
+  - Creator: Poly by Google
+  - Source: undefined
+  - Attribution: "Fire hydrant" by Poly by Google, https://poly.pizza/m/eNPaSEPrst8. Licence at https://creativecommons.org/licenses/by/3.0
+- Hydrant (2VLGEGO1HFI)
+  - Group: hydrants
+  - Licence: CC-BY 3.0
+  - Creator: Jason Wilhelm
+  - Source: undefined
+  - Attribution: "Hydrant" by Jason Wilhelm, https://poly.pizza/m/2VLGEGO1HFI. Licence at https://creativecommons.org/licenses/by/3.0
+- Road Bits (5BPCPOycxC)
+  - Group: streets
+  - Licence: CC0 1.0
+  - Creator: Kay Lousberg
+  - Source: undefined
+  - Attribution: "Road Bits" by Kay Lousberg, https://poly.pizza/m/5BPCPOycxC. Licence at https://creativecommons.org/publicdomain/zero/1.0/
+- Street Straight (UA4axT3nIQ)
+  - Group: streets
+  - Licence: CC0 1.0
+  - Creator: Quaternius
+  - Source: undefined
+  - Attribution: "Street Straight" by Quaternius, https://poly.pizza/m/UA4axT3nIQ. Licence at https://creativecommons.org/publicdomain/zero/1.0/
+- Road (9RFlFC9Znk4)
+  - Group: streets
+  - Licence: CC-BY 3.0
+  - Creator: Poly by Google
+  - Source: undefined
+  - Attribution: "Road" by Poly by Google, https://poly.pizza/m/9RFlFC9Znk4. Licence at https://creativecommons.org/licenses/by/3.0

@@ -7,6 +7,7 @@
     "download:contract": "node scripts/download-metagascar-contract-data.mjs",
     "download:contract:sample": "node scripts/download-metagascar-contract-data.mjs --limit 5",
     "download:poly-houses": "node scripts/download-poly-pizza-houses.mjs",
+    "download:poly-city": "node scripts/download-poly-pizza-city-assets.mjs",
     "calibrate:poly-houses": "node scripts/calibrate-poly-pizza-models.mjs"
   },
   "dependencies": {

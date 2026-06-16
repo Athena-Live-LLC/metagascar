@@ -1,0 +1,894 @@
+[
+  {
+    "id": "75h3mi6uHuC",
+    "group": "cars",
+    "title": "Car",
+    "description": "#vehicle #automobile #driving ",
+    "category": "Transport",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"Car\" by Poly by Google, https://poly.pizza/m/75h3mi6uHuC. Licence at https://creativecommons.org/licenses/by/3.0",
+    "creator": {
+      "Username": "Poly by Google",
+      "DPURL": "https://static.poly.pizza/dp%2Fpolygoogle.jpg"
+    },
+    "animated": false,
+    "tags": [
+      "vehicle",
+      "automobile",
+      "driving"
+    ],
+    "downloadUrl": "https://static.poly.pizza/0455317d-26c3-40cd-8a7d-de547ffdb9df.glb",
+    "thumbnailUrl": "https://static.poly.pizza/0455317d-26c3-40cd-8a7d-de547ffdb9df.webp",
+    "localModel": "assets/poly-pizza/city/models/cars-car-75h3mi6uHuC.glb",
+    "localThumbnail": "assets/poly-pizza/city/thumbnails/cars-car-75h3mi6uHuC.webp",
+    "bytes": {
+      "model": 40460,
+      "thumbnail": 26542
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "dVLJ5CjB0h",
+    "group": "cars",
+    "title": "Red Car",
+    "description": "A low poly red car, It gets quite bumpy whilst driving...",
+    "category": "Transport",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"Red Car\" by J-Toastie, https://poly.pizza/m/dVLJ5CjB0h. Licence at https://creativecommons.org/licenses/by/3.0",
+    "creator": {
+      "Username": "J-Toastie",
+      "DPURL": "https://static.poly.pizza/dp%2F2a18493e-a521-40ff-8c30-f7cfcdb513dd.jpg"
+    },
+    "animated": false,
+    "tags": [
+      "Car",
+      "Red",
+      "Red Car"
+    ],
+    "downloadUrl": "https://static.poly.pizza/a061b874-2c4d-4f08-8c6f-eb24bd8dfcb5.glb",
+    "thumbnailUrl": "https://static.poly.pizza/a061b874-2c4d-4f08-8c6f-eb24bd8dfcb5.webp",
+    "localModel": "assets/poly-pizza/city/models/cars-red-car-dVLJ5CjB0h.glb",
+    "localThumbnail": "assets/poly-pizza/city/thumbnails/cars-red-car-dVLJ5CjB0h.webp",
+    "bytes": {
+      "model": 109504,
+      "thumbnail": 24508
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "SnIoWlh7S2",
+    "group": "cars",
+    "title": "Mazda RX-7",
+    "description": " ",
+    "category": "Transport",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"Mazda RX-7\" by IvOfficial, https://poly.pizza/m/SnIoWlh7S2. Licence at https://creativecommons.org/licenses/by/3.0",
+    "creator": {
+      "Username": "IvOfficial",
+      "DPURL": "https://static.poly.pizza/dp%2Ff8d52a9b-18bb-4c41-8e2f-7a5e67ed5373.jpg"
+    },
+    "animated": false,
+    "tags": [
+      "Car",
+      "Racing"
+    ],
+    "downloadUrl": "https://static.poly.pizza/69f2fddf-f111-4baf-93be-24ba26111602.glb",
+    "thumbnailUrl": "https://static.poly.pizza/69f2fddf-f111-4baf-93be-24ba26111602.webp",
+    "localModel": "assets/poly-pizza/city/models/cars-mazda-rx-7-SnIoWlh7S2.glb",
+    "localThumbnail": "assets/poly-pizza/city/thumbnails/cars-mazda-rx-7-SnIoWlh7S2.webp",
+    "bytes": {
+      "model": 1360144,
+      "thumbnail": 30120
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "BwwnUrWGmV",
+    "group": "cars",
+    "title": "Police Car",
+    "description": null,
+    "category": "Transport",
+    "licence": "CC0 1.0",
+    "attribution": "\"Police Car\" by Quaternius, https://poly.pizza/m/BwwnUrWGmV. Licence at https://creativecommons.org/publicdomain/zero/1.0/",
+    "creator": {
+      "Username": "Quaternius",
+      "DPURL": "https://static.poly.pizza/dp%2Ff63b655a-051c-4c4b-8dcc-3b346a39ece0.jpg"
+    },
+    "animated": false,
+    "tags": [
+      "Car",
+      "Vehicle",
+      "Transportation",
+      "Police Car"
+    ],
+    "downloadUrl": "https://static.poly.pizza/179e43ce-b9e0-40cf-8b99-641693d3207e.glb",
+    "thumbnailUrl": "https://static.poly.pizza/179e43ce-b9e0-40cf-8b99-641693d3207e.webp",
+    "localModel": "assets/poly-pizza/city/models/cars-police-car-BwwnUrWGmV.glb",
+    "localThumbnail": "assets/poly-pizza/city/thumbnails/cars-police-car-BwwnUrWGmV.webp",
+    "bytes": {
+      "model": 180512,
+      "thumbnail": 22630
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "nFwrlcLvM5",
+    "group": "lights",
+    "title": "Street Light",
+    "description": null,
+    "category": "Objects",
+    "licence": "CC0 1.0",
+    "attribution": "\"Street Light\" by Quaternius, https://poly.pizza/m/nFwrlcLvM5. Licence at https://creativecommons.org/publicdomain/zero/1.0/",
+    "creator": {
+      "Username": "Quaternius",
+      "DPURL": "https://static.poly.pizza/dp%2Ff63b655a-051c-4c4b-8dcc-3b346a39ece0.jpg"
+    },
+    "animated": false,
+    "tags": [
+      "Lamp Post",
+      "Outdoor Light",
+      "Public Lighting"
+    ],
+    "downloadUrl": "https://static.poly.pizza/9a8aac3e-d1ee-4860-b294-edca62ef50be.glb",
+    "thumbnailUrl": "https://static.poly.pizza/9a8aac3e-d1ee-4860-b294-edca62ef50be.webp",
+    "localModel": "assets/poly-pizza/city/models/lights-street-light-nFwrlcLvM5.glb",
+    "localThumbnail": "assets/poly-pizza/city/thumbnails/lights-street-light-nFwrlcLvM5.webp",
+    "bytes": {
+      "model": 11056,
+      "thumbnail": 11062
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "ez9fM9NvtRB",
+    "group": "lights",
+    "title": "Lamp post",
+    "description": "#light",
+    "category": "Objects",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"Lamp post\" by Poly by Google, https://poly.pizza/m/ez9fM9NvtRB. Licence at https://creativecommons.org/licenses/by/3.0",
+    "creator": {
+      "Username": "Poly by Google",
+      "DPURL": "https://static.poly.pizza/dp%2Fpolygoogle.jpg"
+    },
+    "animated": false,
+    "tags": [
+      "light"
+    ],
+    "downloadUrl": "https://static.poly.pizza/1a94c508-7715-4b69-ba7e-c095f250b7d1.glb",
+    "thumbnailUrl": "https://static.poly.pizza/1a94c508-7715-4b69-ba7e-c095f250b7d1.webp",
+    "localModel": "assets/poly-pizza/city/models/lights-lamp-post-ez9fM9NvtRB.glb",
+    "localThumbnail": "assets/poly-pizza/city/thumbnails/lights-lamp-post-ez9fM9NvtRB.webp",
+    "bytes": {
+      "model": 45828,
+      "thumbnail": 14712
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "vPFSLYh6sg",
+    "group": "lights",
+    "title": "Streetlight",
+    "description": null,
+    "category": "Furniture & Decor",
+    "licence": "CC0 1.0",
+    "attribution": "\"Streetlight\" by Kay Lousberg, https://poly.pizza/m/vPFSLYh6sg. Licence at https://creativecommons.org/publicdomain/zero/1.0/",
+    "creator": {
+      "Username": "Kay Lousberg",
+      "DPURL": "https://static.poly.pizza/dp%2Fdd20e39e-4da1-45b3-991c-61a069c3963e.jpg"
+    },
+    "animated": false,
+    "tags": [
+      "Streetlight",
+      "Lighting",
+      "Outdoor"
+    ],
+    "downloadUrl": "https://static.poly.pizza/495274d9-0167-45ce-b826-933af7930602.glb",
+    "thumbnailUrl": "https://static.poly.pizza/495274d9-0167-45ce-b826-933af7930602.webp",
+    "localModel": "assets/poly-pizza/city/models/lights-streetlight-vPFSLYh6sg.glb",
+    "localThumbnail": "assets/poly-pizza/city/thumbnails/lights-streetlight-vPFSLYh6sg.webp",
+    "bytes": {
+      "model": 29148,
+      "thumbnail": 16014
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "awUS2qoxeSa",
+    "group": "lights",
+    "title": "Street Objects - Lamp Post",
+    "description": null,
+    "category": "Objects",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"Street Objects - Lamp Post\" by Ev Amitay, https://poly.pizza/m/awUS2qoxeSa. Licence at https://creativecommons.org/licenses/by/3.0",
+    "creator": {
+      "Username": "Ev Amitay",
+      "DPURL": "https://static.poly.pizza/dp%2Fnull.jpg"
+    },
+    "animated": false,
+    "tags": [
+      "lamppost",
+      "cone",
+      "streetlight"
+    ],
+    "downloadUrl": "https://static.poly.pizza/7770e4ac-63b7-4510-b4ae-95a24afe654d.glb",
+    "thumbnailUrl": "https://static.poly.pizza/7770e4ac-63b7-4510-b4ae-95a24afe654d.webp",
+    "localModel": "assets/poly-pizza/city/models/lights-street-objects---lamp-post-awUS2qoxeSa.glb",
+    "localThumbnail": "assets/poly-pizza/city/thumbnails/lights-street-objects---lamp-post-awUS2qoxeSa.webp",
+    "bytes": {
+      "model": 14740,
+      "thumbnail": 14734
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "ayAwgj82oUR",
+    "group": "traffic-lights",
+    "title": "Three way traffic light",
+    "description": "#traffic\n#safety\n#road\n#redlight",
+    "category": "Other",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"Three way traffic light\" by Poly by Google, https://poly.pizza/m/ayAwgj82oUR. Licence at https://creativecommons.org/licenses/by/3.0",
+    "creator": {
+      "Username": "Poly by Google",
+      "DPURL": "https://static.poly.pizza/dp%2Fpolygoogle.jpg"
+    },
+    "animated": false,
+    "tags": [
+      "traffic\nsafety\nroad\nredlight"
+    ],
+    "downloadUrl": "https://static.poly.pizza/8c8ea50b-f32f-4be7-a01b-49a75383b0b4.glb",
+    "thumbnailUrl": "https://static.poly.pizza/8c8ea50b-f32f-4be7-a01b-49a75383b0b4.webp",
+    "localModel": "assets/poly-pizza/city/models/traffic-lights-three-way-traffic-light-ayAwgj82oUR.glb",
+    "localThumbnail": "assets/poly-pizza/city/thumbnails/traffic-lights-three-way-traffic-light-ayAwgj82oUR.webp",
+    "bytes": {
+      "model": 50984,
+      "thumbnail": 19290
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "57rxXzowK8w",
+    "group": "traffic-lights",
+    "title": "Traffic light",
+    "description": "#street #road #traffic #highway #signal #sign",
+    "category": "Objects",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"Traffic light\" by Poly by Google, https://poly.pizza/m/57rxXzowK8w. Licence at https://creativecommons.org/licenses/by/3.0",
+    "creator": {
+      "Username": "Poly by Google",
+      "DPURL": "https://static.poly.pizza/dp%2Fpolygoogle.jpg"
+    },
+    "animated": false,
+    "tags": [
+      "street",
+      "road",
+      "traffic",
+      "highway",
+      "signal",
+      "sign"
+    ],
+    "downloadUrl": "https://static.poly.pizza/4e3c801d-2131-4314-997e-0b1121d1f1df.glb",
+    "thumbnailUrl": "https://static.poly.pizza/4e3c801d-2131-4314-997e-0b1121d1f1df.webp",
+    "localModel": "assets/poly-pizza/city/models/traffic-lights-traffic-light-57rxXzowK8w.glb",
+    "localThumbnail": "assets/poly-pizza/city/thumbnails/traffic-lights-traffic-light-57rxXzowK8w.webp",
+    "bytes": {
+      "model": 44376,
+      "thumbnail": 17656
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "5eb8E34txWa",
+    "group": "traffic-lights",
+    "title": "Traffic Light",
+    "description": null,
+    "category": "Objects",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"Traffic Light\" by Jarlan Perez, https://poly.pizza/m/5eb8E34txWa. Licence at https://creativecommons.org/licenses/by/3.0",
+    "creator": {
+      "Username": "Jarlan Perez",
+      "DPURL": "https://static.poly.pizza/dp%2Fnull.jpg"
+    },
+    "animated": false,
+    "tags": [
+      "traffic signal",
+      "stoplight",
+      "amber"
+    ],
+    "downloadUrl": "https://static.poly.pizza/9a8dbbbf-19e4-4fdf-861d-88ce1428273d.glb",
+    "thumbnailUrl": "https://static.poly.pizza/9a8dbbbf-19e4-4fdf-861d-88ce1428273d.webp",
+    "localModel": "assets/poly-pizza/city/models/traffic-lights-traffic-light-5eb8E34txWa.glb",
+    "localThumbnail": "assets/poly-pizza/city/thumbnails/traffic-lights-traffic-light-5eb8E34txWa.webp",
+    "bytes": {
+      "model": 66324,
+      "thumbnail": 15854
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "60GyU9CdZ9r",
+    "group": "signs",
+    "title": "Stop sign",
+    "description": "#stop #roadsign #road",
+    "category": "Objects",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"Stop sign\" by Poly by Google, https://poly.pizza/m/60GyU9CdZ9r. Licence at https://creativecommons.org/licenses/by/3.0",
+    "creator": {
+      "Username": "Poly by Google",
+      "DPURL": "https://static.poly.pizza/dp%2Fpolygoogle.jpg"
+    },
+    "animated": false,
+    "tags": [
+      "stop",
+      "roadsign",
+      "road"
+    ],
+    "downloadUrl": "https://static.poly.pizza/e86cad98-cb40-49cb-b9d0-31c9314f0116.glb",
+    "thumbnailUrl": "https://static.poly.pizza/e86cad98-cb40-49cb-b9d0-31c9314f0116.webp",
+    "localModel": "assets/poly-pizza/city/models/signs-stop-sign-60GyU9CdZ9r.glb",
+    "localThumbnail": "assets/poly-pizza/city/thumbnails/signs-stop-sign-60GyU9CdZ9r.webp",
+    "bytes": {
+      "model": 7888,
+      "thumbnail": 16724
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "VSZubp0ru3",
+    "group": "signs",
+    "title": "Town Sign",
+    "description": null,
+    "category": "Objects",
+    "licence": "CC0 1.0",
+    "attribution": "\"Town Sign\" by Quaternius, https://poly.pizza/m/VSZubp0ru3. Licence at https://creativecommons.org/publicdomain/zero/1.0/",
+    "creator": {
+      "Username": "Quaternius",
+      "DPURL": "https://static.poly.pizza/dp%2Ff63b655a-051c-4c4b-8dcc-3b346a39ece0.jpg"
+    },
+    "animated": false,
+    "tags": [
+      "Sign",
+      "Structure"
+    ],
+    "downloadUrl": "https://static.poly.pizza/37de9cf3-cc95-4658-96b1-b5872665ffbb.glb",
+    "thumbnailUrl": "https://static.poly.pizza/37de9cf3-cc95-4658-96b1-b5872665ffbb.webp",
+    "localModel": "assets/poly-pizza/city/models/signs-town-sign-VSZubp0ru3.glb",
+    "localThumbnail": "assets/poly-pizza/city/thumbnails/signs-town-sign-VSZubp0ru3.webp",
+    "bytes": {
+      "model": 68796,
+      "thumbnail": 30168
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "ir1ipUXgGE",
+    "group": "signs",
+    "title": "Wooden Sign",
+    "description": null,
+    "category": "Objects",
+    "licence": "CC0 1.0",
+    "attribution": "\"Wooden Sign\" by iPoly3D, https://poly.pizza/m/ir1ipUXgGE. Licence at https://creativecommons.org/publicdomain/zero/1.0/",
+    "creator": {
+      "Username": "iPoly3D",
+      "DPURL": "https://static.poly.pizza/dp%2F39ec1d82-899b-4fcd-8568-74860426288a.jpg"
+    },
+    "animated": false,
+    "tags": [
+      "Cross",
+      "Sign"
+    ],
+    "downloadUrl": "https://static.poly.pizza/c86a48e9-1d66-4dc9-838a-6617dc589d2f.glb",
+    "thumbnailUrl": "https://static.poly.pizza/c86a48e9-1d66-4dc9-838a-6617dc589d2f.webp",
+    "localModel": "assets/poly-pizza/city/models/signs-wooden-sign-ir1ipUXgGE.glb",
+    "localThumbnail": "assets/poly-pizza/city/thumbnails/signs-wooden-sign-ir1ipUXgGE.webp",
+    "bytes": {
+      "model": 24400,
+      "thumbnail": 19512
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "eFQ60hneKwL",
+    "group": "signs",
+    "title": "Traffic Cone",
+    "description": " ",
+    "category": "Objects",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"Traffic Cone\" by Adam Marc Williams, https://poly.pizza/m/eFQ60hneKwL. Licence at https://creativecommons.org/licenses/by/3.0",
+    "creator": {
+      "Username": "Adam Marc Williams",
+      "DPURL": "https://static.poly.pizza/dp%2Fnull.jpg"
+    },
+    "animated": false,
+    "tags": [
+      "cone"
+    ],
+    "downloadUrl": "https://static.poly.pizza/4de80dbc-31ec-4cde-9b35-8424971bc412.glb",
+    "thumbnailUrl": "https://static.poly.pizza/4de80dbc-31ec-4cde-9b35-8424971bc412.webp",
+    "localModel": "assets/poly-pizza/city/models/signs-traffic-cone-eFQ60hneKwL.glb",
+    "localThumbnail": "assets/poly-pizza/city/thumbnails/signs-traffic-cone-eFQ60hneKwL.webp",
+    "bytes": {
+      "model": 9800,
+      "thumbnail": 19890
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "dOSjmdmKaxi",
+    "group": "benches",
+    "title": "Bench",
+    "description": " ",
+    "category": "Furniture & Decor",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"Bench\" by Ev Amitay, https://poly.pizza/m/dOSjmdmKaxi. Licence at https://creativecommons.org/licenses/by/3.0",
+    "creator": {
+      "Username": "Ev Amitay",
+      "DPURL": "https://static.poly.pizza/dp%2Fnull.jpg"
+    },
+    "animated": false,
+    "tags": [
+      "seat",
+      "park bench"
+    ],
+    "downloadUrl": "https://static.poly.pizza/623120d8-bebf-4bd9-bb09-3162c06c9741.glb",
+    "thumbnailUrl": "https://static.poly.pizza/623120d8-bebf-4bd9-bb09-3162c06c9741.webp",
+    "localModel": "assets/poly-pizza/city/models/benches-bench-dOSjmdmKaxi.glb",
+    "localThumbnail": "assets/poly-pizza/city/thumbnails/benches-bench-dOSjmdmKaxi.webp",
+    "bytes": {
+      "model": 21556,
+      "thumbnail": 35178
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "2EvQDFgG1H3",
+    "group": "benches",
+    "title": "Bench",
+    "description": "#park #seating",
+    "category": "Objects",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"Bench\" by Poly by Google, https://poly.pizza/m/2EvQDFgG1H3. Licence at https://creativecommons.org/licenses/by/3.0",
+    "creator": {
+      "Username": "Poly by Google",
+      "DPURL": "https://static.poly.pizza/dp%2Fpolygoogle.jpg"
+    },
+    "animated": false,
+    "tags": [
+      "park",
+      "seating"
+    ],
+    "downloadUrl": "https://static.poly.pizza/81698b0d-6734-4ffd-8cbe-e8990f8c31ef.glb",
+    "thumbnailUrl": "https://static.poly.pizza/81698b0d-6734-4ffd-8cbe-e8990f8c31ef.webp",
+    "localModel": "assets/poly-pizza/city/models/benches-bench-2EvQDFgG1H3.glb",
+    "localThumbnail": "assets/poly-pizza/city/thumbnails/benches-bench-2EvQDFgG1H3.webp",
+    "bytes": {
+      "model": 24504,
+      "thumbnail": 26298
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "5c0XBtFI9C2",
+    "group": "benches",
+    "title": "Bench",
+    "description": null,
+    "category": "Furniture & Decor",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"Bench\" by CMHT Oculus, https://poly.pizza/m/5c0XBtFI9C2. Licence at https://creativecommons.org/licenses/by/3.0",
+    "creator": {
+      "Username": "CMHT Oculus",
+      "DPURL": "https://static.poly.pizza/dp%2Fnull.jpg"
+    },
+    "animated": false,
+    "tags": [
+      "judiciary",
+      "terrace",
+      "workbench"
+    ],
+    "downloadUrl": "https://static.poly.pizza/0fdb0ff6-d6e3-4e4a-a526-a5fd238494dc.glb",
+    "thumbnailUrl": "https://static.poly.pizza/0fdb0ff6-d6e3-4e4a-a526-a5fd238494dc.webp",
+    "localModel": "assets/poly-pizza/city/models/benches-bench-5c0XBtFI9C2.glb",
+    "localThumbnail": "assets/poly-pizza/city/thumbnails/benches-bench-5c0XBtFI9C2.webp",
+    "bytes": {
+      "model": 282344,
+      "thumbnail": 20202
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "6Yjt8nIwLsD",
+    "group": "trees",
+    "title": "Tree",
+    "description": null,
+    "category": "Nature",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"Tree\" by Marc Solà, https://poly.pizza/m/6Yjt8nIwLsD. Licence at https://creativecommons.org/licenses/by/3.0",
+    "creator": {
+      "Username": "Marc Solà",
+      "DPURL": "https://static.poly.pizza/dp%2Fnull.jpg"
+    },
+    "animated": false,
+    "tags": [
+      "tree diagram",
+      "conifer",
+      "shrub"
+    ],
+    "downloadUrl": "https://static.poly.pizza/e1349d8c-4037-4245-bdc2-3b79c417828f.glb",
+    "thumbnailUrl": "https://static.poly.pizza/e1349d8c-4037-4245-bdc2-3b79c417828f.webp",
+    "localModel": "assets/poly-pizza/city/models/trees-tree-6Yjt8nIwLsD.glb",
+    "localThumbnail": "assets/poly-pizza/city/thumbnails/trees-tree-6Yjt8nIwLsD.webp",
+    "bytes": {
+      "model": 70188,
+      "thumbnail": 27196
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "oYtDty0fR6",
+    "group": "trees",
+    "title": "Pine Trees",
+    "description": null,
+    "category": "Nature",
+    "licence": "CC0 1.0",
+    "attribution": "\"Pine Trees\" by Quaternius, https://poly.pizza/m/oYtDty0fR6. Licence at https://creativecommons.org/publicdomain/zero/1.0/",
+    "creator": {
+      "Username": "Quaternius",
+      "DPURL": "https://static.poly.pizza/dp%2Ff63b655a-051c-4c4b-8dcc-3b346a39ece0.jpg"
+    },
+    "animated": false,
+    "tags": [
+      "Plant",
+      "Tree",
+      "Leaf",
+      "Conifer"
+    ],
+    "downloadUrl": "https://static.poly.pizza/1d499f8b-5a1b-4966-9a35-10c0d3841e91.glb",
+    "thumbnailUrl": "https://static.poly.pizza/1d499f8b-5a1b-4966-9a35-10c0d3841e91.webp",
+    "localModel": "assets/poly-pizza/city/models/trees-pine-trees-oYtDty0fR6.glb",
+    "localThumbnail": "assets/poly-pizza/city/thumbnails/trees-pine-trees-oYtDty0fR6.webp",
+    "bytes": {
+      "model": 99604,
+      "thumbnail": 30478
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "MSuchZNT2G",
+    "group": "trees",
+    "title": "Tree",
+    "description": "This is a tree",
+    "category": "Nature",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"Tree\" by ParfaitUwU, https://poly.pizza/m/MSuchZNT2G. Licence at https://creativecommons.org/licenses/by/3.0",
+    "creator": {
+      "Username": "ParfaitUwU",
+      "DPURL": "https://static.poly.pizza/dp%2F4228ba61-78ae-4ec5-85d4-2184ee82c16a.jpg"
+    },
+    "animated": false,
+    "tags": [
+      "foliage",
+      "Tree"
+    ],
+    "downloadUrl": "https://static.poly.pizza/520942e6-ad20-47ae-8389-f1704407a6b2.glb",
+    "thumbnailUrl": "https://static.poly.pizza/520942e6-ad20-47ae-8389-f1704407a6b2.webp",
+    "localModel": "assets/poly-pizza/city/models/trees-tree-MSuchZNT2G.glb",
+    "localThumbnail": "assets/poly-pizza/city/thumbnails/trees-tree-MSuchZNT2G.webp",
+    "bytes": {
+      "model": 43020,
+      "thumbnail": 21636
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "cRipmFHCEVU",
+    "group": "trees",
+    "title": "Tree-2",
+    "description": null,
+    "category": "Nature",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"Tree-2\" by Marc Solà, https://poly.pizza/m/cRipmFHCEVU. Licence at https://creativecommons.org/licenses/by/3.0",
+    "creator": {
+      "Username": "Marc Solà",
+      "DPURL": "https://static.poly.pizza/dp%2Fnull.jpg"
+    },
+    "animated": false,
+    "tags": [
+      "Tree",
+      "Plant",
+      "Foliage"
+    ],
+    "downloadUrl": "https://static.poly.pizza/34cf9e6a-e4da-48ae-98e7-945faf983787.glb",
+    "thumbnailUrl": "https://static.poly.pizza/34cf9e6a-e4da-48ae-98e7-945faf983787.webp",
+    "localModel": "assets/poly-pizza/city/models/trees-tree-2-cRipmFHCEVU.glb",
+    "localThumbnail": "assets/poly-pizza/city/thumbnails/trees-tree-2-cRipmFHCEVU.webp",
+    "bytes": {
+      "model": 54052,
+      "thumbnail": 27834
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "i7HDuYDLkx",
+    "group": "trash",
+    "title": "Trashcan Small",
+    "description": null,
+    "category": "Objects",
+    "licence": "CC0 1.0",
+    "attribution": "\"Trashcan Small\" by Quaternius, https://poly.pizza/m/i7HDuYDLkx. Licence at https://creativecommons.org/publicdomain/zero/1.0/",
+    "creator": {
+      "Username": "Quaternius",
+      "DPURL": "https://static.poly.pizza/dp%2Ff63b655a-051c-4c4b-8dcc-3b346a39ece0.jpg"
+    },
+    "animated": false,
+    "tags": [
+      "Waste Container",
+      "Bin",
+      "Trash"
+    ],
+    "downloadUrl": "https://static.poly.pizza/2e578103-ce2b-4b31-af0b-af507a52ebc2.glb",
+    "thumbnailUrl": "https://static.poly.pizza/2e578103-ce2b-4b31-af0b-af507a52ebc2.webp",
+    "localModel": "assets/poly-pizza/city/models/trash-trashcan-small-i7HDuYDLkx.glb",
+    "localThumbnail": "assets/poly-pizza/city/thumbnails/trash-trashcan-small-i7HDuYDLkx.webp",
+    "bytes": {
+      "model": 11796,
+      "thumbnail": 15238
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "3n-T6f35rdm",
+    "group": "trash",
+    "title": "Trash Can",
+    "description": " ",
+    "category": "Objects",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"Trash Can\" by Zoe XR, https://poly.pizza/m/3n-T6f35rdm. Licence at https://creativecommons.org/licenses/by/3.0",
+    "creator": {
+      "Username": "Zoe XR",
+      "DPURL": "https://static.poly.pizza/dp%2Fnull.jpg"
+    },
+    "animated": false,
+    "tags": [
+      "trash bin",
+      "dustbin",
+      "ashcan"
+    ],
+    "downloadUrl": "https://static.poly.pizza/efc9f584-1f43-491f-947c-7895f359d59e.glb",
+    "thumbnailUrl": "https://static.poly.pizza/efc9f584-1f43-491f-947c-7895f359d59e.webp",
+    "localModel": "assets/poly-pizza/city/models/trash-trash-can-3n-T6f35rdm.glb",
+    "localThumbnail": "assets/poly-pizza/city/thumbnails/trash-trash-can-3n-T6f35rdm.webp",
+    "bytes": {
+      "model": 43336,
+      "thumbnail": 19558
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "eNPaSEPrst8",
+    "group": "hydrants",
+    "title": "Fire hydrant",
+    "description": null,
+    "category": "Objects",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"Fire hydrant\" by Poly by Google, https://poly.pizza/m/eNPaSEPrst8. Licence at https://creativecommons.org/licenses/by/3.0",
+    "creator": {
+      "Username": "Poly by Google",
+      "DPURL": "https://static.poly.pizza/dp%2Fpolygoogle.jpg"
+    },
+    "animated": false,
+    "tags": [
+      "fireplug",
+      "plug",
+      "hydrant"
+    ],
+    "downloadUrl": "https://static.poly.pizza/7d8fc1cf-7a7a-449e-acd2-12afde5147ae.glb",
+    "thumbnailUrl": "https://static.poly.pizza/7d8fc1cf-7a7a-449e-acd2-12afde5147ae.webp",
+    "localModel": "assets/poly-pizza/city/models/hydrants-fire-hydrant-eNPaSEPrst8.glb",
+    "localThumbnail": "assets/poly-pizza/city/thumbnails/hydrants-fire-hydrant-eNPaSEPrst8.webp",
+    "bytes": {
+      "model": 13080,
+      "thumbnail": 21146
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "2VLGEGO1HFI",
+    "group": "hydrants",
+    "title": "Hydrant",
+    "description": "Simple fore hydrant",
+    "category": "Transport",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"Hydrant\" by Jason Wilhelm, https://poly.pizza/m/2VLGEGO1HFI. Licence at https://creativecommons.org/licenses/by/3.0",
+    "creator": {
+      "Username": "Jason Wilhelm",
+      "DPURL": "https://static.poly.pizza/dp%2Fnull.jpg"
+    },
+    "animated": false,
+    "tags": [
+      "spigot",
+      "tap",
+      "water faucet"
+    ],
+    "downloadUrl": "https://static.poly.pizza/454de1df-9054-44b7-a16a-31d2afed2c5f.glb",
+    "thumbnailUrl": "https://static.poly.pizza/454de1df-9054-44b7-a16a-31d2afed2c5f.webp",
+    "localModel": "assets/poly-pizza/city/models/hydrants-hydrant-2VLGEGO1HFI.glb",
+    "localThumbnail": "assets/poly-pizza/city/thumbnails/hydrants-hydrant-2VLGEGO1HFI.webp",
+    "bytes": {
+      "model": 109204,
+      "thumbnail": 24132
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "5BPCPOycxC",
+    "group": "streets",
+    "title": "Road Bits",
+    "description": " ",
+    "category": "Objects",
+    "licence": "CC0 1.0",
+    "attribution": "\"Road Bits\" by Kay Lousberg, https://poly.pizza/m/5BPCPOycxC. Licence at https://creativecommons.org/publicdomain/zero/1.0/",
+    "creator": {
+      "Username": "Kay Lousberg",
+      "DPURL": "https://static.poly.pizza/dp%2Fdd20e39e-4da1-45b3-991c-61a069c3963e.jpg"
+    },
+    "animated": false,
+    "tags": [
+      "Road",
+      "Street",
+      "Intersection"
+    ],
+    "downloadUrl": "https://static.poly.pizza/62e171ee-ad3e-4eaa-807b-66e047fbc8d7.glb",
+    "thumbnailUrl": "https://static.poly.pizza/62e171ee-ad3e-4eaa-807b-66e047fbc8d7.webp",
+    "localModel": "assets/poly-pizza/city/models/streets-road-bits-5BPCPOycxC.glb",
+    "localThumbnail": "assets/poly-pizza/city/thumbnails/streets-road-bits-5BPCPOycxC.webp",
+    "bytes": {
+      "model": 68128,
+      "thumbnail": 28318
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "UA4axT3nIQ",
+    "group": "streets",
+    "title": "Street Straight",
+    "description": " ",
+    "category": "Objects",
+    "licence": "CC0 1.0",
+    "attribution": "\"Street Straight\" by Quaternius, https://poly.pizza/m/UA4axT3nIQ. Licence at https://creativecommons.org/publicdomain/zero/1.0/",
+    "creator": {
+      "Username": "Quaternius",
+      "DPURL": "https://static.poly.pizza/dp%2Ff63b655a-051c-4c4b-8dcc-3b346a39ece0.jpg"
+    },
+    "animated": false,
+    "tags": [
+      "Road",
+      "Street",
+      "Asphalt"
+    ],
+    "downloadUrl": "https://static.poly.pizza/e8c052d1-bb8b-4955-8b2b-93e3627db699.glb",
+    "thumbnailUrl": "https://static.poly.pizza/e8c052d1-bb8b-4955-8b2b-93e3627db699.webp",
+    "localModel": "assets/poly-pizza/city/models/streets-street-straight-UA4axT3nIQ.glb",
+    "localThumbnail": "assets/poly-pizza/city/thumbnails/streets-street-straight-UA4axT3nIQ.webp",
+    "bytes": {
+      "model": 18468,
+      "thumbnail": 18550
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  },
+  {
+    "id": "9RFlFC9Znk4",
+    "group": "streets",
+    "title": "Road",
+    "description": "#road #street #asphalt",
+    "category": "Scenes & Levels",
+    "licence": "CC-BY 3.0",
+    "attribution": "\"Road\" by Poly by Google, https://poly.pizza/m/9RFlFC9Znk4. Licence at https://creativecommons.org/licenses/by/3.0",
+    "creator": {
+      "Username": "Poly by Google",
+      "DPURL": "https://static.poly.pizza/dp%2Fpolygoogle.jpg"
+    },
+    "animated": false,
+    "tags": [
+      "road",
+      "street",
+      "asphalt"
+    ],
+    "downloadUrl": "https://static.poly.pizza/a8d78795-66a5-4c32-a5eb-808c7a7a47ca.glb",
+    "thumbnailUrl": "https://static.poly.pizza/a8d78795-66a5-4c32-a5eb-808c7a7a47ca.webp",
+    "localModel": "assets/poly-pizza/city/models/streets-road-9RFlFC9Znk4.glb",
+    "localThumbnail": "assets/poly-pizza/city/thumbnails/streets-road-9RFlFC9Znk4.webp",
+    "bytes": {
+      "model": 66680,
+      "thumbnail": 25154
+    },
+    "skipped": {
+      "model": false,
+      "thumbnail": false
+    }
+  }
+]
