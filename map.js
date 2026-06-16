@@ -19,13 +19,19 @@ const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const ETH_MAINNET = "0x1";
 const PAGE_SIZE = 20;
 const LOTS_PER_SIDE = PAGE_SIZE / 2;
-const MAX_MODEL_BYTES = 1_350_000;
-const ASSET_IMPORT_CONCURRENCY = 3;
+const MAX_MODEL_BYTES = 950_000;
+const ASSET_IMPORT_CONCURRENCY = 2;
+const DETAIL_MODEL_LIMIT = PAGE_SIZE;
+const LOT_BUILD_BATCH_SIZE = 4;
+const STREET_LABEL_INTERVAL_MS = 120;
+const STREET_STREAM_IDLE_MS = 420;
+const ASSET_IMPORT_IDLE_TIMEOUT_MS = 1200;
+const ASSET_IMPORT_MOVE_PAUSE_MS = 160;
 const NFT_START = 1;
 const NFT_END = 8000;
 const STREET_CSV_URL = "data/metagascar.streets.csv";
-const STREET_VIEW_RADIUS = 2;
-const HOUSE_STREAM_RADIUS = 1;
+const STREET_VIEW_RADIUS = 1;
+const HOUSE_STREAM_RADIUS = 0;
 const PARALLEL_STREET_COUNT = STREET_VIEW_RADIUS * 2 + 1;
 const STREET_SPACING = 22;
 const ROAD_WIDTH = 6.8;
@@ -42,7 +48,7 @@ const PARCEL_CENTER_X = 8.45;
 const WORLD_EDGE_PADDING = 16.5;
 const GRID_WIDTH = STREET_SPACING * (PARALLEL_STREET_COUNT - 1) + ROAD_WIDTH;
 const LOT_SPACING = (FIRST_LOT_Z - LAST_LOT_Z) / (LOTS_PER_SIDE - 1);
-const STREET_DECOR_ROWS = 10;
+const STREET_DECOR_ROWS = 6;
 const STREET_DECOR_SPACING = (FIRST_LOT_Z - LAST_LOT_Z) / (STREET_DECOR_ROWS - 1);
 const STANDARD_DOOR_HEIGHT = 1.0;
 const STANDARD_FLOOR_HEIGHT = 1.45;
@@ -102,13 +108,18 @@ let readContract = null;
 let writeContract = null;
 let mintPrice = null;
 let walletAddress = null;
+let renderLoopStarted = false;
+let lastStreetLabel = "";
+let lastStreetLabelUpdate = 0;
+let pendingStreamStreetIndex = null;
+let pendingStreamSince = 0;
 
 const engine = new BABYLON.Engine(canvas, true, {
-  preserveDrawingBuffer: true,
+  preserveDrawingBuffer: false,
   stencil: true,
   antialias: true
 });
-engine.setHardwareScalingLevel(Math.min(window.devicePixelRatio, 2) / window.devicePixelRatio);
+engine.setHardwareScalingLevel(clamp(window.devicePixelRatio / 1.5, 1, 1.75));
 
 const scene = new BABYLON.Scene(engine);
 scene.clearColor = new BABYLON.Color4(0.02, 0.07, 0.06, 1);
@@ -157,6 +168,7 @@ const pageNodes = [];
 const pickableMeshes = [];
 const assetImportQueue = [];
 let activeAssetImports = 0;
+const assetPrefetches = new Map();
 const materialCache = new Map();
 
 function mat(name, hex, options = {}) {
@@ -223,6 +235,21 @@ function traitNumber(value, fallback) {
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
+}
+
+function nextFrame() {
+  return new Promise((resolve) => window.requestAnimationFrame(() => resolve()));
+}
+
+function delay(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function idleFrame(timeout = ASSET_IMPORT_IDLE_TIMEOUT_MS) {
+  if (window.requestIdleCallback) {
+    return new Promise((resolve) => window.requestIdleCallback(resolve, { timeout }));
+  }
+  return delay(32);
 }
 
 function scaleFromRange(value, minValue, maxValue, minScale, maxScale) {
@@ -469,11 +496,6 @@ function addStreetFurniture(side, z, roadCenterX = 0) {
   lamp.position = new BABYLON.Vector3(x, 2.32, z);
   lamp.material = materials.volt;
   trackPageNode(lamp);
-  const point = new BABYLON.PointLight("streetLamp", lamp.position, scene);
-  point.diffuse = BABYLON.Color3.FromHexString("#d7ff3f");
-  point.intensity = 0.22;
-  point.range = 7;
-  trackPageNode(point);
 
   const signX = roadCenterX + side * (ROAD_HALF + SIDEWALK_WIDTH + 0.72);
   trackPageNode(createBox("streetSignPost", 0.06, 1.05, 0.06, new BABYLON.Vector3(signX, 0.55, z + 1.8), materials.curb));
@@ -639,6 +661,46 @@ function selectAssetModel(house, slotIndex) {
   return models[slotIndex % models.length];
 }
 
+function assetPathParts(model) {
+  const assetPath = model.localModel.replaceAll("\\", "/");
+  const slash = assetPath.lastIndexOf("/");
+  return {
+    rootUrl: assetPath.slice(0, slash + 1),
+    filename: assetPath.slice(slash + 1),
+    url: assetPath
+  };
+}
+
+function prefetchAssetModel(model) {
+  if (!model?.localModel) return Promise.resolve();
+  const { url } = assetPathParts(model);
+  if (!assetPrefetches.has(url)) {
+    assetPrefetches.set(
+      url,
+      fetch(url)
+        .then((response) => {
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          return response.blob();
+        })
+        .then(() => undefined)
+        .catch((error) => {
+          assetPrefetches.delete(url);
+          console.warn(`Could not prefetch ${url}: ${error.message}`);
+        })
+    );
+  }
+  return assetPrefetches.get(url);
+}
+
+function prefetchStreetAssets(rows) {
+  const models = rows
+    .slice(0, DETAIL_MODEL_LIMIT)
+    .map((house, slotIndex) => selectAssetModel(house, slotIndex))
+    .filter(Boolean);
+  const uniqueModels = [...new Map(models.map((model) => [model.localModel, model])).values()];
+  Promise.allSettled(uniqueModels.map(prefetchAssetModel));
+}
+
 function finalModelFits(bounds, targetDimensions, parcelDepth, parcelFrontage) {
   if (!bounds) return false;
   const maxLotWidth = parcelFrontage * 0.88;
@@ -656,6 +718,10 @@ function finalModelFits(bounds, targetDimensions, parcelDepth, parcelFrontage) {
 
 function runNextAssetImport() {
   while (activeAssetImports < ASSET_IMPORT_CONCURRENCY && assetImportQueue.length > 0) {
+    if (movementKeys.size > 0) {
+      window.setTimeout(runNextAssetImport, ASSET_IMPORT_MOVE_PAUSE_MS);
+      return;
+    }
     const job = assetImportQueue.shift();
     activeAssetImports += 1;
     job()
@@ -678,12 +744,15 @@ async function addAssetHouse(house, slotIndex, root, side, parcelDepth, parcelFr
   if (!model) return;
 
   const targetDimensions = targetHouseDimensions(house, parcelDepth, parcelFrontage, model);
-  const assetPath = model.localModel.replaceAll("\\", "/");
-  const slash = assetPath.lastIndexOf("/");
-  const rootUrl = `${assetPath.slice(0, slash + 1)}`;
-  const filename = assetPath.slice(slash + 1);
+  const { rootUrl, filename } = assetPathParts(model);
 
   try {
+    await prefetchAssetModel(model);
+    if (expectedVersion !== cityWindowVersion || root.isDisposed?.()) return;
+    while (movementKeys.size > 0) await delay(ASSET_IMPORT_MOVE_PAUSE_MS);
+    await idleFrame();
+    await nextFrame();
+    if (expectedVersion !== cityWindowVersion || root.isDisposed?.()) return;
     const result = await BABYLON.SceneLoader.ImportMeshAsync("", rootUrl, filename, scene);
     const importedNodes = [...result.meshes, ...result.transformNodes];
     const meshes = result.meshes.filter((mesh) => mesh instanceof BABYLON.Mesh && mesh.getTotalVertices() > 0);
@@ -867,19 +936,40 @@ async function renderCityWindow(centerStreetIndex, options = {}) {
 
   addGroundWindow(currentStreetIndex);
   addVisibleStreetNames(currentStreetIndex);
+  await nextFrame();
+  if (version !== cityWindowVersion) return;
 
   const roots = [];
   const firstStreet = Math.max(0, currentStreetIndex - HOUSE_STREAM_RADIUS);
   const lastStreet = Math.min(maxStreetIndex(), currentStreetIndex + HOUSE_STREAM_RADIUS);
-  for (let streetIndex = firstStreet; streetIndex <= lastStreet; streetIndex += 1) {
-    const streetRows = await Promise.all(streetRowsForIndex(streetIndex).map(loadHouseDetails));
-    streetRows.forEach((house, slotIndex) => {
+
+  const streetBatches = await Promise.all(
+    Array.from({ length: lastStreet - firstStreet + 1 }, async (_value, index) => {
+      const streetIndex = firstStreet + index;
+      const rows = await Promise.all(streetRowsForIndex(streetIndex).map(loadHouseDetails));
+      return { streetIndex, rows };
+    })
+  );
+  if (version !== cityWindowVersion) return;
+
+  const currentBatch = streetBatches.find((batch) => batch.streetIndex === currentStreetIndex);
+  if (currentBatch) prefetchStreetAssets(currentBatch.rows);
+
+  for (const { streetIndex, rows } of streetBatches) {
+    for (let slotIndex = 0; slotIndex < rows.length; slotIndex += 1) {
+      const house = rows[slotIndex];
       const root = createHouseLot(house, slotIndex, streetIndex, {
-        detailed: streetIndex === currentStreetIndex,
+        detailed: streetIndex === currentStreetIndex && slotIndex < DETAIL_MODEL_LIMIT,
         expectedVersion: version
       });
       if (streetIndex === currentStreetIndex) roots[slotIndex] = root;
-    });
+      if ((slotIndex + 1) % LOT_BUILD_BATCH_SIZE === 0) {
+        await nextFrame();
+        if (version !== cityWindowVersion) return;
+      }
+    }
+    await nextFrame();
+    if (version !== cityWindowVersion) return;
   }
 
   const start = visibleOffset + NFT_START;
@@ -887,7 +977,7 @@ async function renderCityWindow(centerStreetIndex, options = {}) {
   blockLabel.textContent = `${activeStreetName()} · ${start}-${end} of ${houseData.length}`;
   prevBlock.disabled = visibleOffset === 0;
   nextBlock.disabled = visibleOffset + PAGE_SIZE >= houseData.length;
-  updateStreetLabel();
+  updateStreetLabel(true);
 
   const visible = streetRowsForIndex(currentStreetIndex);
   if ((selectFirst || !selectedNode) && visible.length > 0) selectHouse(visible[0], roots[0], false);
@@ -929,17 +1019,24 @@ function updateMintButton(label, disabled, note) {
   mintNote.textContent = note;
 }
 
-function updateStreetLabel() {
+function updateStreetLabel(force = false) {
+  const now = performance.now();
+  if (!force && now - lastStreetLabelUpdate < STREET_LABEL_INTERVAL_MS) return;
   const distanceIntoStreet = Math.round(STREET_START_Z - camera.position.z);
   const atSplit = camera.position.z <= INTERSECTION_CLEARANCE_Z;
-  streetLabel.textContent = atSplit ? `${activeStreetName()} cross street` : `${Math.max(0, distanceIntoStreet)}m on ${activeStreetName()}`;
+  const nextLabel = atSplit ? `${activeStreetName()} cross street` : `${Math.max(0, distanceIntoStreet)}m on ${activeStreetName()}`;
+  if (force || nextLabel !== lastStreetLabel) {
+    streetLabel.textContent = nextLabel;
+    lastStreetLabel = nextLabel;
+  }
+  lastStreetLabelUpdate = now;
   walkForward.textContent = document.pointerLockElement === canvas ? "World Active" : "Enter World";
 }
 
 function resetPlayerView(announce = true) {
   camera.position = new BABYLON.Vector3(worldXForStreet(currentStreetIndex), 2.1, 27);
   camera.setTarget(new BABYLON.Vector3(worldXForStreet(currentStreetIndex), 1.3, -6));
-  updateStreetLabel();
+  updateStreetLabel(true);
   if (announce) showToast("View reset to the Metagascar entrance.");
 }
 
@@ -1096,7 +1193,7 @@ function setupEvents() {
   connectButton.addEventListener("click", connectWallet);
   mintButton.addEventListener("click", mintSelectedHouse);
   closePanel.addEventListener("click", () => detailPanel.classList.add("is-hidden"));
-  document.addEventListener("pointerlockchange", updateStreetLabel);
+  document.addEventListener("pointerlockchange", () => updateStreetLabel(true));
   window.addEventListener("keydown", (event) => {
     const key = event.key.toLowerCase();
     if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright", "shift"].includes(key)) {
@@ -1148,9 +1245,34 @@ function keepCameraInWorld() {
 
 let streamUpdatePromise = null;
 
+function startRenderLoop() {
+  if (renderLoopStarted) return;
+  renderLoopStarted = true;
+  engine.runRenderLoop(() => {
+    updatePlayerMovement();
+    keepCameraInWorld();
+    updateCityStreamForCamera();
+    if (selectedNode) selectedNode.position.y = (selectedNode.metadata?.baseY || 0) + (Math.sin(performance.now() * 0.003) + 1) * 0.02;
+    scene.render();
+  });
+}
+
 function updateCityStreamForCamera() {
+  if (houseData.length === 0) return;
   const nextStreetIndex = streetIndexForWorldX(camera.position.x);
   if (nextStreetIndex === renderedStreetCenter || streamUpdatePromise) return;
+  if (movementKeys.size > 0) {
+    pendingStreamStreetIndex = nextStreetIndex;
+    pendingStreamSince = performance.now();
+    return;
+  }
+  if (pendingStreamStreetIndex !== nextStreetIndex) {
+    pendingStreamStreetIndex = nextStreetIndex;
+    pendingStreamSince = performance.now();
+    return;
+  }
+  if (performance.now() - pendingStreamSince < STREET_STREAM_IDLE_MS) return;
+  pendingStreamStreetIndex = null;
   streamUpdatePromise = renderCityWindow(nextStreetIndex, { selectFirst: false })
     .catch((error) => {
       console.error(error);
@@ -1164,9 +1286,16 @@ function updateCityStreamForCamera() {
 async function boot() {
   if (!BABYLON) throw new Error("Babylon.js did not load.");
   setupEvents();
-  assetModels = await loadAssetManifests();
+  startRenderLoop();
+
+  const [loadedAssetModels, loadedStreetRows] = await Promise.all([
+    loadAssetManifests(),
+    loadStreetRows()
+  ]);
+  assetModels = loadedAssetModels;
   if (assetModels.length === 0) showToast("Poly Pizza assets are missing; using fallback homes.");
-  streetRows = await loadStreetRows();
+  streetRows = loadedStreetRows;
+  houseData = streetRows.slice(0, NFT_END - NFT_START + 1);
 
   const defaultProvider = new ethers.JsonRpcProvider("https://ethereum-rpc.publicnode.com", 1);
   readContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, defaultProvider);
@@ -1176,17 +1305,9 @@ async function boot() {
       if (selectedHouse?.liveOwner === ZERO_ADDRESS) refreshMintStatus(selectedHouse);
     })
     .catch((error) => console.warn(`Could not read mint price yet: ${error.shortMessage || error.message}`));
-  houseData = streetRows.slice(0, NFT_END - NFT_START + 1);
 
   currentStreetIndex = 0;
   await renderCityWindow(currentStreetIndex, { resetView: true, selectFirst: true });
-  engine.runRenderLoop(() => {
-    updatePlayerMovement();
-    keepCameraInWorld();
-    updateCityStreamForCamera();
-    if (selectedNode) selectedNode.position.y = (selectedNode.metadata?.baseY || 0) + (Math.sin(performance.now() * 0.003) + 1) * 0.02;
-    scene.render();
-  });
 }
 
 boot().catch((error) => {
