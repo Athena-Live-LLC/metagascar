@@ -20,8 +20,8 @@ const ETH_MAINNET = "0x1";
 const PAGE_SIZE = 20;
 const LOTS_PER_SIDE = PAGE_SIZE / 2;
 const MAX_MODEL_BYTES = 950_000;
-const ASSET_IMPORT_CONCURRENCY = 2;
-const DETAIL_MODEL_LIMIT = PAGE_SIZE;
+const ASSET_IMPORT_CONCURRENCY = 1;
+const DETAIL_MODEL_LIMIT = 6;
 const LOT_BUILD_BATCH_SIZE = 4;
 const STREET_LABEL_INTERVAL_MS = 120;
 const STREET_STREAM_IDLE_MS = 420;
@@ -30,7 +30,7 @@ const ASSET_IMPORT_MOVE_PAUSE_MS = 160;
 const NFT_START = 1;
 const NFT_END = 8000;
 const STREET_CSV_URL = "data/metagascar.streets.csv";
-const STREET_VIEW_RADIUS = 1;
+const STREET_VIEW_RADIUS = 0;
 const HOUSE_STREAM_RADIUS = 0;
 const PARALLEL_STREET_COUNT = STREET_VIEW_RADIUS * 2 + 1;
 const STREET_SPACING = 22;
@@ -84,15 +84,19 @@ const MAP_SURFACE_ZONES = {
   furniture: { label: "sidewalk furniture strip", offset: ROAD_HALF + SIDEWALK_WIDTH + 0.3, halfWidth: 0.42 },
   planting: { label: "planting yard", offset: ROAD_HALF + SIDEWALK_WIDTH + 3.1, halfWidth: 0.85 }
 };
-const CITY_PROP_ZONES = {
-  lights: "furniture",
-  "traffic-lights": "curb",
-  signs: "furniture",
-  benches: "furniture",
-  trash: "furniture",
-  hydrants: "curb"
-};
-const DISABLED_CITY_ASSET_GROUPS = new Set(["cars", "trees", "streets"]);
+const ENABLE_IMPORTED_CITY_PROPS = false;
+const CITY_PROP_ZONES = {};
+const DISABLED_CITY_ASSET_GROUPS = new Set([
+  "cars",
+  "trees",
+  "streets",
+  "lights",
+  "traffic-lights",
+  "signs",
+  "benches",
+  "trash",
+  "hydrants"
+]);
 
 window.METAGASCAR_MAP_ZONES = MAP_SURFACE_ZONES;
 
@@ -541,6 +545,7 @@ function queueCityPropInZone(group, roadCenterX, side, z, options = {}) {
 }
 
 function queueCityProp(group, position, options = {}) {
+  if (!ENABLE_IMPORTED_CITY_PROPS) return null;
   const asset = selectCityAsset(group, options.seed || 0);
   if (!asset) return null;
 
@@ -789,6 +794,8 @@ async function loadAssetManifests() {
 }
 
 async function loadCityAssetManifest() {
+  if (!ENABLE_IMPORTED_CITY_PROPS) return new Map();
+
   try {
     const response = await fetch(CITY_ASSET_MANIFEST_URL);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
